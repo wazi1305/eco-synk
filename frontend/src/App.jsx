@@ -1,17 +1,54 @@
-import React from 'react';
+import React, { useState } from 'react';
+import CameraPage from './components/CameraPage';
+import MapPage from './components/MapPage';
+import CommunityPage from './components/CommunityPage';
 
 function App() {
+  const [activeTab, setActiveTab] = useState('camera');
+
   return (
-    <div className="min-h-screen bg-green-100 flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-green-800 mb-4">
-          EcoSynk 🚀
-        </h1>
-        <p className="text-lg text-green-600">Tailwind CSS is working!</p>
-        <button className="mt-4 bg-green-500 text-white px-6 py-3 rounded-lg">
-          Test Button
-        </button>
-      </div>
+    <div className="h-screen flex flex-col bg-gray-50 safe-area-inset">
+      {/* Main Content */}
+      <main className="flex-1 overflow-hidden">
+        {activeTab === 'camera' && <CameraPage />}
+        {activeTab === 'map' && <MapPage />}
+        {activeTab === 'community' && <CommunityPage />}
+      </main>
+
+      {/* Mobile Bottom Navigation */}
+      <nav className="bg-white border-t border-gray-200 safe-area-inset-bottom">
+        <div className="flex justify-around items-center h-16">
+          <button
+            onClick={() => setActiveTab('camera')}
+            className={`flex flex-col items-center p-2 ${
+              activeTab === 'camera' ? 'text-green-600' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-2xl">📸</span>
+            <span className="text-xs mt-1">Report</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('map')}
+            className={`flex flex-col items-center p-2 ${
+              activeTab === 'map' ? 'text-green-600' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-2xl">🗺️</span>
+            <span className="text-xs mt-1">Map</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('community')}
+            className={`flex flex-col items-center p-2 ${
+              activeTab === 'community' ? 'text-green-600' : 'text-gray-500'
+            }`}
+          >
+            <span className="text-2xl">👥</span>
+            <span className="text-xs mt-1">Community</span>
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
