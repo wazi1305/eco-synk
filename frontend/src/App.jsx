@@ -1,8 +1,26 @@
 import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Flex,
+  IconButton,
+  VStack,
+  HStack,
+  Tooltip,
+  Heading,
+  Text,
+} from '@chakra-ui/react';
+import {
+  FiHome,
+  FiShare2,
+  FiCamera,
+  FiMap,
+  FiUser,
+} from 'react-icons/fi';
 import FeedPage from './components/FeedPage';
 import CameraPage from './components/CameraPage';
 import MapPage from './components/MapPage';
 import ProfilePage from './components/ProfilePage';
+import CampaignsPage from './components/campaigns/CampaignsPage';
 
 function App() {
   const [activeTab, setActiveTab] = useState('feed');
@@ -26,76 +44,100 @@ function App() {
     };
   }, []);
 
+  const tabs = [
+    { id: 'feed', label: 'Feed', icon: FiHome },
+    { id: 'campaigns', label: 'Campaigns', icon: FiShare2 },
+    { id: 'camera', label: 'Report', icon: FiCamera },
+    { id: 'map', label: 'Map', icon: FiMap },
+    { id: 'profile', label: 'Profile', icon: FiUser },
+  ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'feed':
+        return <FeedPage />;
+      case 'campaigns':
+        return <CampaignsPage />;
+      case 'camera':
+        return <CameraPage />;
+      case 'map':
+        return <MapPage />;
+      case 'profile':
+        return <ProfilePage />;
+      default:
+        return <FeedPage />;
+    }
+  };
+
   return (
-    <div 
-      className="flex flex-col bg-gray-50 app-container safe-area-inset"
-      style={{ height: windowHeight }}
+    <Flex
+      direction="column"
+      bg="gray.50"
+      height={windowHeight}
+      className="app-container safe-area-inset"
     >
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden relative">
-        {activeTab === 'feed' && <FeedPage />}
-        {activeTab === 'camera' && <CameraPage />}
-        {activeTab === 'map' && <MapPage />}
-        {activeTab === 'profile' && <ProfilePage />}
-      </div>
+      <Box flex="1" overflow="hidden" position="relative">
+        {renderContent()}
+      </Box>
 
       {/* Bottom Navigation - Fixed at bottom with safe areas */}
-      <div className="bg-white border-t border-gray-200 safe-area-inset-bottom shrink-0">
-        <div className="flex justify-around items-center h-16 max-w-md mx-auto">
-          <button
-            onClick={() => setActiveTab('feed')}
-            className={`flex flex-col items-center justify-center p-3 flex-1 transition-colors duration-200 min-h-16 ${
-              activeTab === 'feed' 
-                ? 'text-green-600' 
-                : 'text-gray-500 hover:text-green-500'
-            }`}
-            aria-label="Feed"
-          >
-            <span className="text-2xl mb-1">🏠</span>
-            <span className="text-xs font-medium">Feed</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('camera')}
-            className={`flex flex-col items-center justify-center p-3 flex-1 transition-colors duration-200 min-h-16 ${
-              activeTab === 'camera' 
-                ? 'text-green-600' 
-                : 'text-gray-500 hover:text-green-500'
-            }`}
-            aria-label="Report"
-          >
-            <span className="text-2xl mb-1">📸</span>
-            <span className="text-xs font-medium">Report</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('map')}
-            className={`flex flex-col items-center justify-center p-3 flex-1 transition-colors duration-200 min-h-16 ${
-              activeTab === 'map' 
-                ? 'text-green-600' 
-                : 'text-gray-500 hover:text-green-500'
-            }`}
-            aria-label="Map"
-          >
-            <span className="text-2xl mb-1">🗺️</span>
-            <span className="text-xs font-medium">Map</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`flex flex-col items-center justify-center p-3 flex-1 transition-colors duration-200 min-h-16 ${
-              activeTab === 'profile' 
-                ? 'text-green-600' 
-                : 'text-gray-500 hover:text-green-500'
-            }`}
-            aria-label="Profile"
-          >
-            <span className="text-2xl mb-1">�</span>
-            <span className="text-xs font-medium">Profile</span>
-          </button>
-        </div>
-      </div>
-    </div>
+      <Box
+        bg="white"
+        borderTop="1px solid"
+        borderColor="gray.200"
+        className="safe-area-inset-bottom"
+        flexShrink={0}
+        overflowX="auto"
+        boxShadow="0 -1px 3px rgba(0, 0, 0, 0.1)"
+      >
+        <HStack
+          spacing={0}
+          h="16"
+          minW="max-content"
+          justify="space-around"
+          px={2}
+        >
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            
+            return (
+              <Tooltip key={tab.id} label={tab.label} placement="top">
+                <Box
+                  as="button"
+                  display="flex"
+                  flexDirection="column"
+                  alignItems="center"
+                  justifyContent="center"
+                  p={2}
+                  flex={1}
+                  minH="16"
+                  minW="14"
+                  cursor="pointer"
+                  transition="all 0.2s"
+                  color={isActive ? 'brand.600' : 'gray.500'}
+                  _hover={{
+                    color: 'brand.500',
+                  }}
+                  _active={{
+                    bg: 'gray.100',
+                  }}
+                  onClick={() => setActiveTab(tab.id)}
+                  aria-label={tab.label}
+                  borderRadius="md"
+                >
+                  <Icon size={24} style={{ marginBottom: '0.25rem' }} />
+                  <Box as="span" fontSize="xs" fontWeight="600" mt={1}>
+                    {tab.label}
+                  </Box>
+                </Box>
+              </Tooltip>
+            );
+          })}
+        </HStack>
+      </Box>
+    </Flex>
   );
 }
 
