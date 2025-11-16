@@ -1,0 +1,40 @@
+{
+  "hash": "e3743d35",
+  "configHash": "4e8a7bed",
+  "lockfileHash": "38493581",
+  "browserHash": "4351f21a",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "4368a6a3",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "42f86e1e",
+      "needsInterop": true
+    },
+    "react-webcam": {
+      "src": "../../node_modules/react-webcam/dist/react-webcam.js",
+      "file": "react-webcam.js",
+      "fileHash": "16ce9ac9",
+      "needsInterop": true
+    },
+    "axios": {
+      "src": "../../node_modules/axios/index.js",
+      "file": "axios.js",
+      "fileHash": "d763f441",
+      "needsInterop": false
+    }
+  },
+  "chunks": {
+    "chunk-3GO6BHLD": {
+      "file": "chunk-3GO6BHLD.js"
+    },
+    "chunk-HKJ2B2AA": {
+      "file": "chunk-HKJ2B2AA.js"
+    }
+  }
+}
