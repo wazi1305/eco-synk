@@ -23,10 +23,11 @@ import { FiSearch } from 'react-icons/fi';
 import CampaignCard from './CampaignCard';
 import DonationModal from './DonationModal';
 import CampaignDetail from './CampaignDetail';
+import JoinCampaignModal from './JoinCampaignModal';
 
 // Campaign list component
-const CampaignList = ({ campaigns, isEmpty, activeTab, onViewDetails, onDonate }) => (
-  <Box flex="1" overflowY="auto">
+const CampaignList = ({ campaigns, isEmpty, activeTab, onViewDetails, onJoin, onDonate }) => (
+  <Box flex="1">
     {campaigns.length === 0 ? (
       <VStack justify="center" align="center" h="full" spacing={4} py={12}>
         <Heading size="lg" textAlign="center" color="gray.600">
@@ -41,16 +42,17 @@ const CampaignList = ({ campaigns, isEmpty, activeTab, onViewDetails, onDonate }
         </Text>
       </VStack>
     ) : (
-      <VStack spacing={4} p={4} pb={6}>
+      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} p={6} pb={6}>
         {campaigns.map((campaign) => (
           <CampaignCard
             key={campaign.id}
             campaign={campaign}
             onViewDetails={() => onViewDetails(campaign)}
+            onJoin={() => onJoin(campaign)}
             onDonate={() => onDonate(campaign)}
           />
         ))}
-      </VStack>
+      </SimpleGrid>
     )}
   </Box>
 );
@@ -59,25 +61,28 @@ const CampaignList = ({ campaigns, isEmpty, activeTab, onViewDetails, onDonate }
 const MOCK_CAMPAIGNS = [
   {
     id: '1',
-    title: 'Beach Cleanup Drive',
-    description: 'Join us for a massive beach cleanup at Coral Bay. Help us remove plastic waste and protect marine life.',
-    organizer: { name: 'Sarah Chen', avatar: '👩' },
-    location: { address: 'Coral Bay, CA', lat: 34.0195, lng: -118.4912 },
-    date: '2024-12-15T09:00:00Z',
+    title: 'Jumeirah Beach Cleanup Drive',
+    description: 'Join us for a massive beach cleanup at Jumeirah Beach. Help us remove plastic waste and protect marine life in the Arabian Gulf.',
+    organizer: { name: 'Fatima Al Zahra', avatar: '👩' },
+    location: { address: 'Jumeirah Beach, Dubai', lat: 25.2318, lng: 55.2592 },
+    date: '2024-12-15T07:00:00Z',
     status: 'active',
     image: '🏖️',
+    difficulty: 'easy',
+    duration: 'Half Day',
+    category: 'cleanup',
     volunteers: [
-      { name: 'John Doe', avatar: '👨' },
-      { name: 'Jane Smith', avatar: '👩' },
-      { name: 'Mike Johnson', avatar: '👨' },
+      { name: 'Ahmed Al Mansouri', avatar: '👨' },
+      { name: 'Sara Ibrahim', avatar: '👩' },
+      { name: 'Omar Al Hashemi', avatar: '👨' },
     ],
     volunteerGoal: 50,
     funding: {
-      current: 2450,
-      goal: 5000,
+      current: 8500,
+      goal: 15000,
       donations: [],
     },
-    materials: ['Plastic bags', 'Nets', 'Bottles', 'Cans'],
+    materials: ['Biodegradable bags', 'Reusable gloves', 'Collection nets', 'Water bottles'],
     esgImpact: {
       co2Saved: 120,
       itemsCollected: 340,
@@ -86,24 +91,27 @@ const MOCK_CAMPAIGNS = [
   },
   {
     id: '2',
-    title: 'Urban Park Restoration',
-    description: 'Help restore Central Park to its natural beauty. Remove invasive species and plant native trees.',
-    organizer: { name: 'Alex Rivera', avatar: '👨' },
-    location: { address: 'Central Park, NY', lat: 40.7829, lng: -73.9654 },
-    date: '2024-12-20T10:00:00Z',
+    title: 'Al Salam Park Green Initiative',
+    description: 'Help expand green spaces in Al Salam Park. Plant native UAE species and create sustainable landscaping for our community.',
+    organizer: { name: 'Mohammed Al Rashid', avatar: '👨' },
+    location: { address: 'Al Salam Park, Sharjah', lat: 25.3463, lng: 55.4208 },
+    date: '2024-12-20T08:00:00Z',
     status: 'active',
-    image: '🌲',
+    image: '🌳',
+    difficulty: 'moderate',
+    duration: 'Full Day',
+    category: 'restoration',
     volunteers: [
-      { name: 'Emma Wilson', avatar: '👩' },
-      { name: 'David Brown', avatar: '👨' },
+      { name: 'Aisha Al Mansoori', avatar: '👩' },
+      { name: 'Khalid Rahman', avatar: '👨' },
     ],
-    volunteerGoal: 100,
+    volunteerGoal: 75,
     funding: {
-      current: 3800,
-      goal: 8000,
+      current: 12000,
+      goal: 25000,
       donations: [],
     },
-    materials: ['Tools', 'Seeds', 'Mulch', 'Saplings'],
+    materials: ['Native saplings', 'Irrigation tools', 'Mulch', 'Desert-adapted plants'],
     esgImpact: {
       co2Saved: 450,
       itemsCollected: 520,
@@ -112,26 +120,29 @@ const MOCK_CAMPAIGNS = [
   },
   {
     id: '3',
-    title: 'River Cleanup Initiative',
-    description: 'Remove trash from our local river. Kayak and boat donations welcome!',
-    organizer: { name: 'Tom Martinez', avatar: '👨' },
-    location: { address: 'Hudson River, NY', lat: 40.7489, lng: -74.0008 },
-    date: '2024-11-30T08:00:00Z',
+    title: 'Dubai Creek Heritage Cleanup',
+    description: 'Restore the historic Dubai Creek waterway. Remove debris and preserve this important cultural landmark for future generations.',
+    organizer: { name: 'Layla Al Maktoum', avatar: '👩' },
+    location: { address: 'Dubai Creek, Deira', lat: 25.2677, lng: 55.3103 },
+    date: '2024-11-30T06:00:00Z',
     status: 'completed',
-    image: '🌊',
+    image: '🚤',
+    difficulty: 'difficult',
+    duration: 'Full Day',
+    category: 'cleanup',
     volunteers: [
-      { name: 'Lisa Chen', avatar: '👩' },
-      { name: 'Mark Davis', avatar: '👨' },
-      { name: 'Sarah Johnson', avatar: '👩' },
-      { name: 'Kevin Lee', avatar: '👨' },
+      { name: 'Hassan Al Zaabi', avatar: '👨' },
+      { name: 'Mariam Khalil', avatar: '👩' },
+      { name: 'Yousef Al Amiri', avatar: '👨' },
+      { name: 'Noor Al Sharqi', avatar: '👩' },
     ],
-    volunteerGoal: 75,
+    volunteerGoal: 60,
     funding: {
-      current: 5200,
-      goal: 6000,
+      current: 18500,
+      goal: 20000,
       donations: [],
     },
-    materials: ['Nets', 'Gloves', 'Bags', 'Kayaks'],
+    materials: ['Waterproof gloves', 'Collection boats', 'Fishing nets', 'Safety equipment'],
     esgImpact: {
       co2Saved: 890,
       itemsCollected: 1240,
@@ -140,15 +151,18 @@ const MOCK_CAMPAIGNS = [
   },
   {
     id: '4',
-    title: 'Downtown Street Cleanup',
-    description: 'Organize community members to clean downtown streets and improve neighborhood aesthetics.',
-    organizer: { name: 'Maria Garcia', avatar: '👩' },
-    location: { address: 'Downtown District, SF', lat: 37.7749, lng: -122.4194 },
-    date: '2024-12-10T14:00:00Z',
+    title: 'Business Bay District Cleanup',
+    description: 'Organize community members to clean Business Bay streets and enhance the urban environment in this bustling district.',
+    organizer: { name: 'Amna Al Suwaidi', avatar: '👩' },
+    location: { address: 'Business Bay, Dubai', lat: 25.1918, lng: 55.2683 },
+    date: '2024-12-10T16:00:00Z',
     status: 'active',
-    image: '🏙️',
+    image: '🏢',
+    difficulty: 'easy',
+    duration: 'Half Day',
+    category: 'cleanup',
     volunteers: [
-      { name: 'James Wilson', avatar: '👨' },
+      { name: 'Rashid Al Nuaimi', avatar: '👨' },
     ],
     volunteerGoal: 40,
     funding: {
@@ -165,53 +179,64 @@ const MOCK_CAMPAIGNS = [
   },
   {
     id: '5',
-    title: 'Forest Trail Maintenance',
-    description: 'Help maintain local forest trails by clearing debris and planting native species.',
-    organizer: { name: 'Chris Anderson', avatar: '👨' },
-    location: { address: 'Redwood Forest, CA', lat: 41.2132, lng: -124.0046 },
-    date: '2024-12-22T11:00:00Z',
+    title: 'Hajar Mountains Conservation',
+    description: 'Help preserve the natural beauty of Hajar Mountains. Clear hiking trails and protect native desert wildlife habitats.',
+    organizer: { name: 'Salem Al Kaabi', avatar: '👨' },
+    location: { address: 'Hajar Mountains, RAK', lat: 25.9738, lng: 56.1333 },
+    date: '2024-12-22T06:30:00Z',
     status: 'active',
-    image: '🌲',
+    image: '🏜️',
+    difficulty: 'moderate',
+    duration: 'Full Day',
+    category: 'conservation',
     volunteers: [
-      { name: 'Rachel Green', avatar: '👩' },
-      { name: 'Paul Harris', avatar: '👨' },
-      { name: 'Nina Patel', avatar: '👩' },
-      { name: 'Ryan Cooper', avatar: '👨' },
-      { name: 'Julia White', avatar: '👩' },
+      { name: 'Hala Al Qasimi', avatar: '👩' },
+      { name: 'Tariq Al Blooshi', avatar: '👨' },
+      { name: 'Maryam Al Dhaheri', avatar: '👩' },
+      { name: 'Saeed Al Marri', avatar: '👨' },
+      { name: 'Latifa Al Shamsi', avatar: '👩' },
     ],
-    volunteerGoal: 30,
+    volunteerGoal: 40,
     funding: {
-      current: 2100,
-      goal: 4000,
+      current: 9500,
+      goal: 16000,
       donations: [],
     },
-    materials: ['Rakes', 'Shovels', 'Chainsaws', 'Seeds'],
+    materials: ['Trail markers', 'Native seeds', 'Water conservation tools', 'Wildlife cameras'],
     esgImpact: {
       co2Saved: 200,
       itemsCollected: 280,
-      areaCleaned: 3.0,
+      areaCleaned: 12.0,
     },
   },
 ];
 
 const CampaignsPage = () => {
   const [activeTab, setActiveTab] = useState(0);
-  const [windowHeight, setWindowHeight] = useState('100vh');
   const [searchTerm, setSearchTerm] = useState('');
   const [campaigns, setCampaigns] = useState(MOCK_CAMPAIGNS);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
   const [showDonationModal, setShowDonationModal] = useState(false);
   const [showCampaignDetail, setShowCampaignDetail] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showHeader, setShowHeader] = useState(true);
+  const lastScrollYRef = React.useRef(0);
 
-  useEffect(() => {
-    const setAppHeight = () => {
-      setWindowHeight(`${window.innerHeight}px`);
-    };
+  // Simplified scroll handler
+  const handleScroll = React.useCallback((e) => {
+    const currentScrollY = e.target.scrollTop;
     
-    setAppHeight();
-    window.addEventListener('resize', setAppHeight);
+    if (currentScrollY < 30) {
+      setShowHeader(true);
+    } else if (currentScrollY > 100) {
+      if (currentScrollY > lastScrollYRef.current) {
+        setShowHeader(false);
+      } else {
+        setShowHeader(true);
+      }
+    }
     
-    return () => window.removeEventListener('resize', setAppHeight);
+    lastScrollYRef.current = currentScrollY;
   }, []);
 
   const activeCampaigns = campaigns.filter(c => c.status === 'active');
@@ -237,6 +262,11 @@ const CampaignsPage = () => {
     setShowCampaignDetail(true);
   };
 
+  const handleJoinCampaign = (campaign) => {
+    setSelectedCampaign(campaign);
+    setShowJoinModal(true);
+  };
+
   const handleDonationSubmit = (amount) => {
     if (selectedCampaign) {
       const updatedCampaigns = campaigns.map(c =>
@@ -256,84 +286,155 @@ const CampaignsPage = () => {
   };
 
   return (
-    <Flex
-      direction="column"
-      bg="gray.50"
-      h={windowHeight}
-      className="safe-area-inset"
-    >
-      {/* Header */}
+    <Flex direction="column" h="full" bg="gray.50" overflow="hidden" className="safe-area-inset">
+      {/* Header - Collapsible */}
       <Box
         bgGradient="linear(to-r, brand.600, brand.500)"
         color="white"
-        px={6}
-        py={8}
+        px={4}
+        pt={6}
+        pb={4}
         className="safe-area-inset-top"
         flexShrink={0}
         boxShadow="sm"
+        position="fixed"
+        top={0}
+        left={0}
+        right={0}
+        transform={showHeader ? "translateY(0)" : "translateY(-100%)"}
+        transition="transform 0.3s ease"
+        zIndex={20}
       >
-        <VStack align="flex-start" spacing={2}>
-          <Heading as="h1" size="2xl" fontWeight="bold">
-            Campaigns
-          </Heading>
-          <Text fontSize="sm" opacity={0.9}>
-            Join cleanup initiatives in your community
-          </Text>
+        <VStack spacing={4} align="start">
+          <Box>
+            <Heading as="h1" size="lg" fontWeight="bold" letterSpacing="tight">
+              Campaigns
+            </Heading>
+            <Text fontSize="sm" opacity={0.9} fontWeight="medium">
+              Join cleanup initiatives in your community
+            </Text>
+          </Box>
+
+          {/* Search Bar */}
+          <Box w="full">
+            <InputGroup size="md">
+              <InputLeftElement pointerEvents="none">
+                <Icon as={FiSearch} color="gray.400" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search campaigns, locations..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                borderRadius="lg"
+                bg="white"
+                border="1px solid"
+                borderColor="gray.200"
+                color="gray.900"
+                _placeholder={{ color: 'gray.500' }}
+                _focus={{ 
+                  borderColor: 'brand.400', 
+                  bg: 'white',
+                  boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)'
+                }}
+                _hover={{ borderColor: 'gray.300' }}
+              />
+            </InputGroup>
+          </Box>
+
+          {/* Tabs in Header */}
+          <Box w="full">
+            <Tabs index={activeTab} onChange={setActiveTab}>
+              <TabList border="none" gap={1}>
+                <Tab 
+                  fontWeight="600" 
+                  fontSize="sm"
+                  color="whiteAlpha.700"
+                  _selected={{ 
+                    color: 'white', 
+                    bg: 'whiteAlpha.20', 
+                    borderRadius: 'md'
+                  }}
+                  _hover={{ color: 'white', bg: 'whiteAlpha.10' }}
+                  borderRadius="md"
+                  px={4}
+                  py={2}
+                >
+                  Active ({activeCampaigns.length})
+                </Tab>
+                <Tab 
+                  fontWeight="600" 
+                  fontSize="sm"
+                  color="whiteAlpha.700"
+                  _selected={{ 
+                    color: 'white', 
+                    bg: 'whiteAlpha.20', 
+                    borderRadius: 'md'
+                  }}
+                  _hover={{ color: 'white', bg: 'whiteAlpha.10' }}
+                  borderRadius="md"
+                  px={4}
+                  py={2}
+                >
+                  Completed ({completedCampaigns.length})
+                </Tab>
+              </TabList>
+            </Tabs>
+          </Box>
         </VStack>
       </Box>
 
-      {/* Search Bar */}
-      <Box bg="white" px={6} py={4} borderBottom="1px solid" borderColor="gray.200" flexShrink={0} boxShadow="sm">
-        <InputGroup size="md">
-          <InputLeftElement pointerEvents="none">
-            <Icon as={FiSearch} color="gray.400" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search campaigns, locations..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            borderRadius="lg"
-            bg="gray.50"
-            border="1px solid"
-            borderColor="gray.200"
-            _focus={{ borderColor: 'brand.500', bg: 'white' }}
-          />
-        </InputGroup>
-      </Box>
-
-      {/* Tabs and Content */}
-      <Box flex="1" overflow="hidden">
-        <Tabs index={activeTab} onChange={setActiveTab} display="flex" flexDirection="column" h="full">
-          <TabList bg="white" borderBottom="2px solid" borderColor="gray.200" px={4}>
-            <Tab _selected={{ color: 'brand.600', borderColor: 'brand.600' }} fontWeight="600">
-              Active ({activeCampaigns.length})
-            </Tab>
-            <Tab _selected={{ color: 'brand.600', borderColor: 'brand.600' }} fontWeight="600">
-              Completed ({completedCampaigns.length})
-            </Tab>
-          </TabList>
-          <TabPanels flex="1" overflow="hidden" display="flex" flexDirection="column">
-            <TabPanel display="flex" flexDirection="column" h="full" p={0}>
+      {/* Main Content Container */}
+      <Box 
+        flex="1" 
+        overflowY="auto"
+        onScroll={handleScroll}
+        pt={showHeader ? "220px" : "20px"}
+        pb="80px"
+        transition="padding-top 0.3s ease"
+      >
+        <Tabs index={activeTab} onChange={setActiveTab}>
+          <TabPanels>
+            <TabPanel p={0}>
               <CampaignList 
                 campaigns={filteredActive} 
                 isEmpty={filteredActive.length === 0 && searchTerm}
                 activeTab={activeTab}
                 onViewDetails={handleViewCampaign}
+                onJoin={handleJoinCampaign}
                 onDonate={handleDonate}
               />
             </TabPanel>
-            <TabPanel display="flex" flexDirection="column" h="full" p={0}>
+            <TabPanel p={0}>
               <CampaignList 
                 campaigns={filteredCompleted} 
                 isEmpty={filteredCompleted.length === 0 && searchTerm}
                 activeTab={activeTab}
                 onViewDetails={handleViewCampaign}
+                onJoin={handleJoinCampaign}
                 onDonate={handleDonate}
               />
             </TabPanel>
           </TabPanels>
         </Tabs>
       </Box>
+
+      {/* Join Campaign Modal */}
+      {showJoinModal && selectedCampaign && (
+        <JoinCampaignModal
+          isOpen={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          campaign={selectedCampaign}
+        />
+      )}
+
+      {/* Join Campaign Modal */}
+      {showJoinModal && selectedCampaign && (
+        <JoinCampaignModal
+          isOpen={showJoinModal}
+          onClose={() => setShowJoinModal(false)}
+          campaign={selectedCampaign}
+        />
+      )}
 
       {/* Donation Modal */}
       {showDonationModal && selectedCampaign && (

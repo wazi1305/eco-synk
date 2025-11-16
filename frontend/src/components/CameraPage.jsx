@@ -16,6 +16,7 @@ import {
   GridItem,
   Center,
   Spinner,
+  Divider,
 } from '@chakra-ui/react';
 import { FiCamera, FiImage, FiStar } from 'react-icons/fi';
 import { analyzeTrashImage } from '../services/gemini';
@@ -38,10 +39,37 @@ const CameraPage = () => {
   const [cameraError, setCameraError] = useState(null);
   const [useFileUpload, setUseFileUpload] = useState(false);
   const [isFlashing, setIsFlashing] = useState(false);
+  const [showHeader, setShowHeader] = useState(true);
+  const lastScrollYRef = useRef(0);
+  const scrollTimeoutRef = useRef(null);
+
+  // Simplified scroll handler with debouncing
+  const handleScroll = React.useCallback((e) => {
+    const currentScrollY = e.target.scrollTop;
+    
+    // Clear existing timeout
+    if (scrollTimeoutRef.current) {
+      clearTimeout(scrollTimeoutRef.current);
+    }
+    
+    // Simple logic: show header when near top, hide when scrolling down significantly
+    if (currentScrollY < 50) {
+      setShowHeader(true);
+    } else if (currentScrollY > 150 && currentScrollY > lastScrollYRef.current + 5) {
+      setShowHeader(false);
+    } else if (currentScrollY < lastScrollYRef.current - 20) {
+      setShowHeader(true);
+    }
+    
+    // Debounced update
+    scrollTimeoutRef.current = setTimeout(() => {
+      lastScrollYRef.current = currentScrollY;
+    }, 50);
+  }, []);
 
   useEffect(() => {
     const setAppHeight = () => {
-      setWindowHeight(`${ window.innerHeight }px`);
+      setWindowHeight(`${window.innerHeight}px`);
     };
     setAppHeight();
     window.addEventListener('resize', setAppHeight);
@@ -91,7 +119,7 @@ const CameraPage = () => {
           setCapturedImage(imageSrc);
           setCameraError(null);
         }
-      } catch (error) {
+      } catch {
         setCameraError('Failed to capture image');
       }
     }
@@ -145,7 +173,7 @@ const CameraPage = () => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       setAnalysisResult(result);
       setSubmitted(true);
-    } catch (error) {
+    } catch {
       setAnalysisResult({
         primary_material: 'Mixed Waste',
         cleanup_priority_score: 7,
@@ -172,33 +200,43 @@ const CameraPage = () => {
       overflow="hidden"
       style={{ height: windowHeight }}
     >
+      {/* Header - Collapsible */}
       <Box
-        bgGradient="linear(to-r, brand.600, brand.500, teal.500)"
+        bg="gray.900"
         color="white"
         px={4}
         py={4}
         flexShrink={0}
         shadow="md"
+        borderBottom="1px solid"
+        borderColor="gray.700"
+        position="fixed"
+        top={0}
+        left={0}
+        right={0}
+        transform={showHeader ? "translateY(0)" : "translateY(-100%)"}
+        transition="transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        zIndex={20}
       >
-        <HStack justify="space-between" align="start" mb={4}>
+        <HStack justify="space-between" align="start" mb={3}>
           <VStack align="start" spacing={1} flex="1">
-            <Heading size="lg">Report Trash</Heading>
-            <Text fontSize="xs" opacity={0.9}>Earn points for environmental impact</Text>
+            <Heading size="lg" fontWeight="bold">Report Trash</Heading>
+            <Text fontSize="sm" color="gray.400">Document your environmental impact</Text>
           </VStack>
           <VStack align="end" spacing={0}>
-            <Heading size="md">{USER_STATS.points}</Heading>
-            <Text fontSize="xs" opacity={0.9}>Points</Text>
+            <Heading size="md" color="brand.400">{USER_STATS.points}</Heading>
+            <Text fontSize="xs" color="gray.400">Points</Text>
           </VStack>
         </HStack>
 
         <Grid templateColumns="repeat(2, 1fr)" gap={2}>
-          <GridItem bg="whiteAlpha.20" px={3} py={2} borderRadius="md" textAlign="center">
-            <Heading size="sm">{USER_STATS.streak}</Heading>
-            <Text fontSize="xs" opacity={0.9}>Day Streak</Text>
+          <GridItem bg="whiteAlpha.10" px={3} py={2} borderRadius="lg" textAlign="center">
+            <Heading size="sm" color="white">{USER_STATS.streak}</Heading>
+            <Text fontSize="xs" color="gray.400">Day Streak</Text>
           </GridItem>
-          <GridItem bg="whiteAlpha.20" px={3} py={2} borderRadius="md" textAlign="center">
-            <Heading size="sm">{USER_STATS.cleanups}</Heading>
-            <Text fontSize="xs" opacity={0.9}>Cleanups</Text>
+          <GridItem bg="whiteAlpha.10" px={3} py={2} borderRadius="lg" textAlign="center">
+            <Heading size="sm" color="white">{USER_STATS.cleanups}</Heading>
+            <Text fontSize="xs" color="gray.400">Cleanups</Text>
           </GridItem>
         </Grid>
       </Box>
@@ -210,26 +248,54 @@ const CameraPage = () => {
         justify="center"
         bg="black"
         position="relative"
-        overflow="hidden"
+        overflow="auto"
+        onScroll={handleScroll}
+        pt={showHeader ? "140px" : "80px"}
+        transition="padding-top 0.4s ease-out"
       >
         {!capturedImage ? (
           <>
             {useFileUpload ? (
-              <VStack h="full" w="full" spacing={4} px={6} justify="center" align="center">
-                <Icon as={FiCamera} boxSize={16} color="whiteAlpha.50" />
-                <Heading size="lg" color="white" textAlign="center">Camera Unavailable</Heading>
-                {cameraError && <Text fontSize="sm" color="gray.400" textAlign="center">{cameraError}</Text>}
-                <Text fontSize="sm" color="gray.500" textAlign="center">
-                  Upload an image from your device
+              <VStack h="full" w="full" spacing={6} px={6} justify="center" align="center">
+                <Box
+                  bg="whiteAlpha.10"
+                  p={6}
+                  borderRadius="full"
+                  mb={2}
+                >
+                  <Icon as={FiImage} boxSize={12} color="brand.400" />
+                </Box>
+                <Heading size="lg" color="white" textAlign="center">Upload Photo</Heading>
+                {cameraError && (
+                  <Text fontSize="sm" color="gray.400" textAlign="center" bg="red.900" px={3} py={2} borderRadius="md">
+                    {cameraError}
+                  </Text>
+                )}
+                <Text fontSize="md" color="gray.500" textAlign="center">
+                  Select an image from your gallery
                 </Text>
 
-                <VStack gap={3} w="full" mt={6}>
-                  <Button w="full" bgGradient="linear(to-r, brand.600, brand.500)" color="white" size="lg" onClick={triggerFileUpload}>
-                    <Icon as={FiImage} mr={2} /> Upload Photo
+                <VStack gap={3} w="full" mt={4}>
+                  <Button 
+                    w="full" 
+                    bg="brand.500" 
+                    color="white" 
+                    size="lg" 
+                    onClick={triggerFileUpload}
+                    _hover={{ bg: 'brand.600' }}
+                  >
+                    <Icon as={FiImage} mr={3} /> Choose from Gallery
                   </Button>
 
-                  <Button w="full" bg="gray.700" color="white" size="lg" onClick={() => { setCameraError(null); setUseFileUpload(false); }}>
-                    <Icon as={FiCamera} mr={2} /> Try Again
+                  <Button 
+                    w="full" 
+                    bg="whiteAlpha.200" 
+                    color="white" 
+                    size="lg" 
+                    onClick={() => { setCameraError(null); setUseFileUpload(false); }}
+                    _hover={{ bg: 'whiteAlpha.300' }}
+                  >
+                    <Icon as={FiCamera} mr={3} /> Try Camera Again
                   </Button>
                 </VStack>
               </VStack>
@@ -261,26 +327,34 @@ const CameraPage = () => {
                   </VStack>
                 </Center>
 
-                <Flex position="absolute" bottom="2rem" left="50%" transform="translateX(-50%)" justify="center" zIndex={10}>
+                <Flex position="absolute" bottom="6rem" left="50%" transform="translateX(-50%)" justify="center" zIndex={10}>
                   <Button
                     onClick={capture}
-                    variant="ghost"
+                    variant="unstyled"
                     p={1}
                     borderRadius="full"
                     w={20}
                     h={20}
                     bg="white"
-                    border="8px solid"
-                    borderColor="brand.600"
+                    border="4px solid"
+                    borderColor="white"
                     shadow="2xl"
-                    _hover={{ transform: 'scale(1.1)' }}
+                    _hover={{ transform: 'scale(1.05)' }}
                     _active={{ transform: 'scale(0.95)' }}
+                    transition="all 0.2s"
                   >
-                    <Box w={16} h={16} bg="brand.600" borderRadius="full" animation="pulse 2s infinite" />
+                    <Box 
+                      w={16} 
+                      h={16} 
+                      bg="brand.500" 
+                      borderRadius="full" 
+                      _hover={{ bg: 'brand.600' }}
+                      transition="all 0.2s"
+                    />
                   </Button>
                 </Flex>
 
-                <Button position="absolute" bottom="2rem" left={4} bg="gray.700" color="white" size="sm" onClick={triggerFileUpload}>
+                <Button position="absolute" bottom="6rem" left={4} bg="gray.700" color="white" size="sm" onClick={triggerFileUpload}>
                   <Icon as={FiImage} mr={2} /> Gallery
                 </Button>
 
@@ -311,50 +385,62 @@ const CameraPage = () => {
             )}
 
             {submitted && analysisResult && !isAnalyzing && (
-              <Flex position="absolute" inset={0} bgGradient="linear(to-b, rgba(0,0,0,0.8), transparent, rgba(0,0,0,0.8))" align="center" justify="center" p={6}>
-                <Card bg="white" borderRadius="2xl" shadow="2xl" maxW="sm" w="full">
+              <Flex position="absolute" inset={0} bg="blackAlpha.800" align="center" justify="center" p={6}>
+                <Card bg="white" borderRadius="2xl" shadow="2xl" maxW="md" w="full">
                   <CardBody p={6}>
-                    <VStack spacing={4} textAlign="center">
-                      <Icon as={FiStar} boxSize={12} color="brand.500" />
-                      <Heading size="lg" color="gray.900">Report Submitted!</Heading>
-                      <Text fontSize="sm" color="gray.600">Contributing to a cleaner environment</Text>
+                    <VStack spacing={5} textAlign="center">
+                      <Box
+                        bg="green.100"
+                        p={3}
+                        borderRadius="full"
+                      >
+                        <Icon as={FiStar} boxSize={8} color="green.600" />
+                      </Box>
+                      
+                      <VStack spacing={2}>
+                        <Heading size="lg" color="gray.900">Success!</Heading>
+                        <Text fontSize="sm" color="gray.600">Thank you for your contribution</Text>
+                      </VStack>
 
-                      <Box w="full" bg="brand.50" p={4} borderRadius="lg" border="1px solid" borderColor="brand.200">
-                        <Heading size="sm" mb={3} color="gray.900" textAlign="left">AI Analysis:</Heading>
-                        <VStack spacing={3} align="start">
-                          <HStack align="start" spacing={3}>
-                            <Icon as={FiImage} boxSize={5} color="brand.600" />
-                            <VStack align="start" spacing={0}>
-                              <Text fontSize="xs" color="gray.600" fontWeight="semibold">PRIMARY MATERIAL</Text>
-                              <Text fontWeight="bold">{analysisResult.primary_material}</Text>
-                            </VStack>
+                      <Box w="full" bg="gray.50" p={4} borderRadius="xl" border="1px solid" borderColor="gray.200">
+                        <VStack spacing={4} align="start">
+                          <HStack justify="space-between" w="full">
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.700">Material</Text>
+                            <Text fontWeight="bold" color="gray.900">{analysisResult.primary_material}</Text>
                           </HStack>
-                          <HStack align="start" spacing={3}>
-                            <Icon as={FiStar} boxSize={5} color="brand.600" />
-                            <VStack align="start" spacing={0}>
-                              <Text fontSize="xs" color="gray.600" fontWeight="semibold">PRIORITY</Text>
-                              <Text fontWeight="bold">{analysisResult.cleanup_priority_score}/10</Text>
-                            </VStack>
+                          
+                          <HStack justify="space-between" w="full">
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.700">Priority</Text>
+                            <Text fontWeight="bold" color="gray.900">{analysisResult.cleanup_priority_score}/10</Text>
                           </HStack>
-                          <HStack align="start" spacing={3}>
-                            <Icon as={FiCamera} boxSize={5} color="brand.600" />
-                            <VStack align="start" spacing={0}>
-                              <Text fontSize="xs" color="gray.600" fontWeight="semibold">ITEMS DETECTED</Text>
-                              <Text fontWeight="bold">{analysisResult.specific_items.join(', ')}</Text>
-                            </VStack>
+                          
+                          <HStack justify="space-between" w="full" align="start">
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.700">Items</Text>
+                            <Text fontWeight="bold" color="gray.900" textAlign="right" maxW="32">
+                              {analysisResult.specific_items.join(', ')}
+                            </Text>
                           </HStack>
-                          <HStack align="start" spacing={3} pt={2} borderTop="1px" borderColor="brand.200" w="full">
-                            <Icon as={FiStar} boxSize={5} color="brand.600" />
-                            <VStack align="start" spacing={0}>
-                              <Text fontSize="xs" color="gray.600" fontWeight="semibold">POINTS EARNED</Text>
-                              <Text fontWeight="bold" fontSize="lg" color="brand.600">+{analysisResult.cleanup_priority_score * 5} PTS</Text>
-                            </VStack>
+                          
+                          <Divider />
+                          
+                          <HStack justify="space-between" w="full">
+                            <Text fontSize="sm" fontWeight="semibold" color="gray.700">Points Earned</Text>
+                            <Text fontWeight="bold" fontSize="lg" color="brand.600">
+                              +{analysisResult.cleanup_priority_score * 5} PTS
+                            </Text>
                           </HStack>
                         </VStack>
                       </Box>
 
-                      <Button w="full" bgGradient="linear(to-r, brand.600, brand.500)" color="white" size="lg" onClick={confirmSubmission}>
-                        Capture Another
+                      <Button 
+                        w="full" 
+                        bg="brand.500" 
+                        color="white" 
+                        size="lg" 
+                        onClick={confirmSubmission}
+                        _hover={{ bg: 'brand.600' }}
+                      >
+                        Report Another
                       </Button>
                     </VStack>
                   </CardBody>
@@ -363,11 +449,38 @@ const CameraPage = () => {
             )}
 
             {!submitted && !isAnalyzing && (
-              <HStack position="absolute" bottom={0} left={0} right={0} justify="center" spacing={3} px={4} py={4} bgGradient="linear(to-t, rgba(0,0,0,0.8), transparent)">
-                <Button flex={1} maxW="xs" bg="gray.700" color="white" size="lg" onClick={retake} isDisabled={isAnalyzing}>
+              <HStack 
+                position="absolute" 
+                bottom={0} 
+                left={0} 
+                right={0} 
+                justify="center" 
+                spacing={4} 
+                px={4} 
+                py={4} 
+                bg="blackAlpha.800"
+                backdropFilter="blur(10px)"
+              >
+                <Button 
+                  flex={1} 
+                  maxW="48" 
+                  bg="whiteAlpha.200" 
+                  color="white" 
+                  size="lg" 
+                  onClick={retake}
+                  _hover={{ bg: 'whiteAlpha.300' }}
+                >
                   Retake
                 </Button>
-                <Button flex={1} maxW="xs" bgGradient="linear(to-r, brand.600, brand.500)" color="white" size="lg" onClick={submitReport} isDisabled={isAnalyzing}>
+                <Button 
+                  flex={1} 
+                  maxW="48" 
+                  bg="brand.500" 
+                  color="white" 
+                  size="lg" 
+                  onClick={submitReport}
+                  _hover={{ bg: 'brand.600' }}
+                >
                   Analyze & Submit
                 </Button>
               </HStack>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Flex,
@@ -16,6 +17,7 @@ import {
   FiMap,
   FiUser,
 } from 'react-icons/fi';
+import SplashScreen from './components/SplashScreen';
 import FeedPage from './components/FeedPage';
 import CameraPage from './components/CameraPage';
 import MapPage from './components/MapPage';
@@ -23,8 +25,41 @@ import ProfilePage from './components/ProfilePage';
 import CampaignsPage from './components/campaigns/CampaignsPage';
 
 function App() {
-  const [activeTab, setActiveTab] = useState('feed');
   const [windowHeight, setWindowHeight] = useState('100vh');
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Simulate app initialization (replace with actual loading logic)
+  useEffect(() => {
+    const initializeApp = async () => {
+      // Simulate loading time for splash screen (2-3 seconds)
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
+      // Add any actual initialization logic here:
+      // - Check authentication
+      // - Load user preferences
+      // - Initialize services
+      // - Fetch initial data
+      
+      setIsLoading(false);
+    };
+
+    initializeApp();
+  }, []);
+
+  // Get current active tab from route
+  const getCurrentTab = () => {
+    const path = location.pathname;
+    if (path === '/' || path === '/feed') return 'feed';
+    if (path === '/campaigns') return 'campaigns';
+    if (path === '/report') return 'camera';
+    if (path === '/map') return 'map';
+    if (path === '/profile') return 'profile';
+    return 'feed';
+  };
+
+  const activeTab = getCurrentTab();
 
   // Handle mobile viewport height issues
   useEffect(() => {
@@ -45,29 +80,22 @@ function App() {
   }, []);
 
   const tabs = [
-    { id: 'feed', label: 'Feed', icon: FiHome },
-    { id: 'campaigns', label: 'Campaigns', icon: FiShare2 },
-    { id: 'camera', label: 'Report', icon: FiCamera },
-    { id: 'map', label: 'Map', icon: FiMap },
-    { id: 'profile', label: 'Profile', icon: FiUser },
+    { id: 'feed', label: 'Feed', icon: FiHome, path: '/feed' },
+    { id: 'campaigns', label: 'Campaigns', icon: FiShare2, path: '/campaigns' },
+    { id: 'camera', label: 'Report', icon: FiCamera, path: '/report' },
+    { id: 'map', label: 'Map', icon: FiMap, path: '/map' },
+    { id: 'profile', label: 'Profile', icon: FiUser, path: '/profile' },
   ];
 
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'feed':
-        return <FeedPage />;
-      case 'campaigns':
-        return <CampaignsPage />;
-      case 'camera':
-        return <CameraPage />;
-      case 'map':
-        return <MapPage />;
-      case 'profile':
-        return <ProfilePage />;
-      default:
-        return <FeedPage />;
-    }
+  // Navigation handler
+  const handleNavigation = (path) => {
+    navigate(path);
   };
+
+  // Show splash screen while loading
+  if (isLoading) {
+    return <SplashScreen />;
+  }
 
   return (
     <Flex
@@ -78,7 +106,14 @@ function App() {
     >
       {/* Main Content Area */}
       <Box flex="1" overflow="hidden" position="relative">
-        {renderContent()}
+        <Routes>
+          <Route path="/" element={<FeedPage />} />
+          <Route path="/feed" element={<FeedPage />} />
+          <Route path="/campaigns" element={<CampaignsPage />} />
+          <Route path="/report" element={<CameraPage />} />
+          <Route path="/map" element={<MapPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+        </Routes>
       </Box>
 
       {/* Bottom Navigation - Fixed at bottom with safe areas */}
@@ -90,6 +125,11 @@ function App() {
         flexShrink={0}
         overflowX="auto"
         boxShadow="0 -1px 3px rgba(0, 0, 0, 0.1)"
+        position="fixed"
+        bottom={0}
+        left={0}
+        right={0}
+        zIndex={50}
       >
         <HStack
           spacing={0}
@@ -123,7 +163,7 @@ function App() {
                   _active={{
                     bg: 'gray.100',
                   }}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleNavigation(tab.path)}
                   aria-label={tab.label}
                   borderRadius="md"
                 >
