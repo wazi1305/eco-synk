@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Removed Tailwind - using Chakra UI instead */
 
 /* Mobile-safe areas for notches and browser UI */
 html, body {

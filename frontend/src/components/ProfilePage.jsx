@@ -1,4 +1,31 @@
 import React, { useState } from 'react';
+import {
+  Box,
+  Flex,
+  VStack,
+  HStack,
+  Avatar,
+  Heading,
+  Text,
+  Tabs,
+  TabList,
+  TabPanels,
+  TabPanel,
+  Tab,
+  Card,
+  CardBody,
+  Grid,
+  GridItem,
+  Progress,
+  Button,
+  Alert,
+  AlertIcon,
+  Badge,
+  AlertTitle,
+  AlertDescription,
+  Icon,
+} from '@chakra-ui/react';
+import { FiZap, FiAward } from 'react-icons/fi';
 
 // Mock user data
 const USER_DATA = {
@@ -65,252 +92,298 @@ const ACHIEVEMENTS = [
 
 const ProfilePage = () => {
   const [showAllAchievements, setShowAllAchievements] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
 
   const earnedCount = ACHIEVEMENTS.filter((a) => a.earned).length;
   const displayedAchievements = showAllAchievements ? ACHIEVEMENTS : ACHIEVEMENTS.slice(0, 3);
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
+    <Flex direction="column" h="full" bg="gray.50" overflow="hidden" className="safe-area-inset">
       {/* Gradient Header */}
-      <div className="bg-gradient-to-b from-green-600 via-emerald-600 to-teal-600 text-white px-4 pt-4 pb-8 safe-area-inset-top flex-shrink-0">
+      <Box
+        bgGradient="linear(to-b, brand.600, brand.500, teal.500)"
+        color="white"
+        px={6}
+        pt={6}
+        pb={8}
+        className="safe-area-inset-top"
+        flexShrink={0}
+        boxShadow="sm"
+      >
         {/* Profile Info */}
-        <div className="flex items-center space-x-4 mb-6">
-          <div className="w-16 h-16 bg-white bg-opacity-30 rounded-full flex items-center justify-center text-3xl backdrop-blur-sm border border-white border-opacity-40">
-            👤
-          </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold">{USER_DATA.name}</h1>
-            <p className="text-sm opacity-90">{USER_DATA.rank}</p>
-            <p className="text-xs opacity-75">Joined {USER_DATA.joinDate}</p>
-          </div>
-        </div>
+        <HStack spacing={4} mb={6}>
+          <Avatar
+            size="lg"
+            name={USER_DATA.name}
+            bg="whiteAlpha.30"
+            border="2px solid"
+            borderColor="whiteAlpha.40"
+          />
+          <VStack align="flex-start" spacing={1}>
+            <Heading as="h1" size="lg" fontWeight="bold">
+              {USER_DATA.name}
+            </Heading>
+            <Text fontSize="sm" opacity={0.9}>
+              {USER_DATA.rank}
+            </Text>
+            <Text fontSize="xs" opacity={0.75}>
+              Joined {USER_DATA.joinDate}
+            </Text>
+          </VStack>
+        </HStack>
 
         {/* Key Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 backdrop-blur-sm border border-white border-opacity-20">
-            <div className="text-3xl font-bold">{USER_DATA.totalCleanups}</div>
-            <div className="text-xs opacity-90">Total Cleanups</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 backdrop-blur-sm border border-white border-opacity-20">
-            <div className="text-3xl font-bold">{USER_DATA.totalPoints}</div>
-            <div className="text-xs opacity-90">Points Earned</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 backdrop-blur-sm border border-white border-opacity-20">
-            <div className="text-3xl font-bold">{USER_DATA.totalItems}</div>
-            <div className="text-xs opacity-90">Items Collected</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 backdrop-blur-sm border border-white border-opacity-20">
-            <div className="text-3xl font-bold flex items-center">
-              <span>🔥</span>
-              <span className="ml-1">{USER_DATA.currentStreak}</span>
-            </div>
-            <div className="text-xs opacity-90">Day Streak</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 bg-white sticky top-0 z-10 flex-shrink-0">
-        <button
-          onClick={() => setActiveTab('overview')}
-          className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors duration-200 border-b-2 ${
-            activeTab === 'overview'
-              ? 'text-green-600 border-green-600'
-              : 'text-gray-600 border-transparent hover:text-green-600'
-          }`}
-        >
-          Overview
-        </button>
-        <button
-          onClick={() => setActiveTab('achievements')}
-          className={`flex-1 py-3 px-4 font-semibold text-sm transition-colors duration-200 border-b-2 ${
-            activeTab === 'achievements'
-              ? 'text-green-600 border-green-600'
-              : 'text-gray-600 border-transparent hover:text-green-600'
-          }`}
-        >
-          Achievements
-        </button>
-      </div>
+        <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+          <GridItem>
+            <Box bg="whiteAlpha.20" backdropBlur="sm" borderRadius="lg" p={3} border="1px solid" borderColor="whiteAlpha.20">
+              <Text fontSize="3xl" fontWeight="bold">{USER_DATA.totalCleanups}</Text>
+              <Text fontSize="xs" opacity={0.9}>Total Cleanups</Text>
+            </Box>
+          </GridItem>
+          <GridItem>
+            <Box bg="whiteAlpha.20" backdropBlur="sm" borderRadius="lg" p={3} border="1px solid" borderColor="whiteAlpha.20">
+              <Text fontSize="3xl" fontWeight="bold">{USER_DATA.totalPoints}</Text>
+              <Text fontSize="xs" opacity={0.9}>Points Earned</Text>
+            </Box>
+          </GridItem>
+          <GridItem>
+            <Box bg="whiteAlpha.20" backdropBlur="sm" borderRadius="lg" p={3} border="1px solid" borderColor="whiteAlpha.20">
+              <Text fontSize="3xl" fontWeight="bold">{USER_DATA.totalItems}</Text>
+              <Text fontSize="xs" opacity={0.9}>Items Collected</Text>
+            </Box>
+          </GridItem>
+          <GridItem>
+            <Box bg="whiteAlpha.20" backdropBlur="sm" borderRadius="lg" p={3} border="1px solid" borderColor="whiteAlpha.20">
+              <HStack>
+                <Text fontSize="3xl" fontWeight="bold">{USER_DATA.currentStreak}</Text>
+              </HStack>
+              <Text fontSize="xs" opacity={0.9}>Day Streak</Text>
+            </Box>
+          </GridItem>
+        </Grid>
+      </Box>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'overview' && (
-          <div className="p-4 pb-20">
-            {/* Stats Section */}
-            <div className="mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Your Stats</h2>
+      <Box flex="1" overflow="hidden">
+        <Tabs display="flex" flexDirection="column" h="full">
+          <TabList bg="white" borderBottom="2px solid" borderBottomColor="gray.200" px={4} py={0}>
+            <Tab _selected={{ color: 'brand.600', borderColor: 'brand.600' }} fontWeight="600">
+              Overview
+            </Tab>
+            <Tab _selected={{ color: 'brand.600', borderColor: 'brand.600' }} fontWeight="600">
+              Achievements ({earnedCount}/{ACHIEVEMENTS.length})
+            </Tab>
+          </TabList>
 
-              <div className="space-y-3">
-                {/* Cleanup Progress */}
-                <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-900">Cleanup Goal</span>
-                    <span className="text-sm text-green-600 font-semibold">{USER_DATA.totalCleanups}/30</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(USER_DATA.totalCleanups / 30) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
+          <TabPanels flex="1" overflow="hidden">
+            {/* Overview Tab */}
+            <TabPanel overflow="y-auto" pb={24}>
+              <VStack spacing={6} align="stretch">
+                {/* Stats Section */}
+                <VStack spacing={3} align="stretch">
+                  <Heading size="md" color="gray.900">
+                    Your Stats
+                  </Heading>
 
-                {/* Items Goal */}
-                <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-900">Items Goal</span>
-                    <span className="text-sm text-green-600 font-semibold">{USER_DATA.totalItems}/500</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(USER_DATA.totalItems / 500) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
+                  {/* Cleanup Progress */}
+                  <Card bg="white" border="1px solid" borderColor="gray.100">
+                    <CardBody spacing={2}>
+                      <Flex justify="space-between" align="center">
+                        <Text fontWeight="600" color="gray.900">Cleanup Goal</Text>
+                        <Badge colorScheme="brand" fontSize="xs">
+                          {USER_DATA.totalCleanups}/30
+                        </Badge>
+                      </Flex>
+                      <Progress
+                        value={(USER_DATA.totalCleanups / 30) * 100}
+                        colorScheme="brand"
+                        size="sm"
+                        borderRadius="full"
+                      />
+                    </CardBody>
+                  </Card>
 
-                {/* Points Goal */}
-                <div className="bg-white rounded-lg p-4 border border-gray-100 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-gray-900">Points Goal</span>
-                    <span className="text-sm text-green-600 font-semibold">{USER_DATA.totalPoints}/1000</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(USER_DATA.totalPoints / 1000) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                  {/* Items Goal */}
+                  <Card bg="white" border="1px solid" borderColor="gray.100">
+                    <CardBody spacing={2}>
+                      <Flex justify="space-between" align="center">
+                        <Text fontWeight="600" color="gray.900">Items Goal</Text>
+                        <Badge colorScheme="brand" fontSize="xs">
+                          {USER_DATA.totalItems}/500
+                        </Badge>
+                      </Flex>
+                      <Progress
+                        value={(USER_DATA.totalItems / 500) * 100}
+                        colorScheme="brand"
+                        size="sm"
+                        borderRadius="full"
+                      />
+                    </CardBody>
+                  </Card>
 
-            {/* Quick Actions */}
-            <div className="mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h2>
+                  {/* Points Goal */}
+                  <Card bg="white" border="1px solid" borderColor="gray.100">
+                    <CardBody spacing={2}>
+                      <Flex justify="space-between" align="center">
+                        <Text fontWeight="600" color="gray.900">Points Goal</Text>
+                        <Badge colorScheme="brand" fontSize="xs">
+                          {USER_DATA.totalPoints}/1000
+                        </Badge>
+                      </Flex>
+                      <Progress
+                        value={(USER_DATA.totalPoints / 1000) * 100}
+                        colorScheme="brand"
+                        size="sm"
+                        borderRadius="full"
+                      />
+                    </CardBody>
+                  </Card>
+                </VStack>
 
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  className="bg-white border-2 border-green-600 text-green-600 px-4 py-4 rounded-lg font-semibold hover:bg-green-50 transition-colors duration-200 min-h-20 flex items-center justify-center"
-                  aria-label="Start cleanup"
-                >
-                  <span>
-                    <div className="text-2xl mb-1">🧹</div>
-                    <div className="text-xs">Start Cleanup</div>
-                  </span>
-                </button>
-
-                <button
-                  className="bg-white border-2 border-green-600 text-green-600 px-4 py-4 rounded-lg font-semibold hover:bg-green-50 transition-colors duration-200 min-h-20 flex items-center justify-center"
-                  aria-label="View leaderboard"
-                >
-                  <span>
-                    <div className="text-2xl mb-1">🏆</div>
-                    <div className="text-xs">Leaderboard</div>
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {/* Current Streak Info */}
-            <div className="bg-gradient-to-r from-orange-100 to-red-100 border-l-4 border-orange-500 rounded-lg p-4 mb-6">
-              <div className="flex items-start space-x-3">
-                <span className="text-3xl">🔥</span>
-                <div className="flex-1">
-                  <h3 className="font-bold text-gray-900">
-                    {USER_DATA.currentStreak}-Day Streak!
-                  </h3>
-                  <p className="text-sm text-gray-700 mt-1">
-                    Keep it up! Complete a cleanup tomorrow to maintain your streak.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'achievements' && (
-          <div className="p-4 pb-20">
-            {/* Achievements Summary */}
-            <div className="mb-6">
-              <h2 className="text-lg font-bold text-gray-900 mb-2">Achievements</h2>
-              <p className="text-sm text-gray-600">
-                {earnedCount} of {ACHIEVEMENTS.length} earned
-              </p>
-            </div>
-
-            {/* Achievements Grid */}
-            <div className="grid grid-cols-1 gap-3">
-              {displayedAchievements.map((achievement) => (
-                <div
-                  key={achievement.id}
-                  className={`rounded-lg p-4 border transition-all duration-200 ${
-                    achievement.earned
-                      ? 'bg-white border-green-200 shadow-sm'
-                      : 'bg-gray-50 border-gray-200 opacity-75'
-                  }`}
-                >
-                  <div className="flex items-start space-x-4">
-                    <div
-                      className={`text-3xl w-12 h-12 flex items-center justify-center rounded-lg flex-shrink-0 ${
-                        achievement.earned
-                          ? 'bg-green-100'
-                          : 'bg-gray-200'
-                      }`}
+                {/* Quick Actions */}
+                <VStack spacing={3} align="stretch">
+                  <Heading size="md" color="gray.900">
+                    Quick Actions
+                  </Heading>
+                  <Grid templateColumns="repeat(2, 1fr)" gap={3}>
+                    <Button
+                      variant="outline"
+                      colorScheme="brand"
+                      h="24"
+                      fontSize="sm"
+                      fontWeight="600"
+                      flexDirection="column"
+                      whiteSpace="normal"
                     >
-                      {achievement.icon}
-                    </div>
+                      <Text fontSize="2xl" mb={1}>🧹</Text>
+                      Start Cleanup
+                    </Button>
+                    <Button
+                      variant="outline"
+                      colorScheme="brand"
+                      h="24"
+                      fontSize="sm"
+                      fontWeight="600"
+                      flexDirection="column"
+                      whiteSpace="normal"
+                    >
+                      <Text fontSize="2xl" mb={1}>🏆</Text>
+                      Leaderboard
+                    </Button>
+                  </Grid>
+                </VStack>
 
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900">{achievement.name}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{achievement.description}</p>
-
-                      {achievement.earned ? (
-                        <p className="text-xs text-green-600 font-semibold mt-2">
-                          ✓ Earned {achievement.earnedDate}
-                        </p>
-                      ) : (
-                        <div className="mt-2">
-                          <div className="w-full bg-gray-200 rounded-full h-1.5">
-                            <div
-                              className="bg-gradient-to-r from-green-500 to-emerald-600 h-1.5 rounded-full"
-                              style={{
-                                width: `${
-                                  achievement.progress.includes('/500')
-                                    ? (156 / 500) * 100
-                                    : achievement.progress.includes('/30')
-                                    ? (7 / 30) * 100
-                                    : (420 / 1000) * 100
-                                }%`,
-                              }}
-                            ></div>
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1">{achievement.progress}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Show More Button */}
-            {!showAllAchievements && ACHIEVEMENTS.length > 3 && (
-              <div className="flex justify-center py-6">
-                <button
-                  onClick={() => setShowAllAchievements(true)}
-                  className="text-green-600 font-semibold hover:text-green-700 transition-colors duration-200"
+                {/* Streak Alert */}
+                <Alert
+                  status="warning"
+                  variant="left-accent"
+                  borderRadius="lg"
                 >
-                  Show All Achievements ({ACHIEVEMENTS.length})
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    </div>
+                  <AlertIcon fontSize="2xl">🔥</AlertIcon>
+                  <VStack align="flex-start" spacing={0}>
+                    <AlertTitle>{USER_DATA.currentStreak}-Day Streak!</AlertTitle>
+                    <AlertDescription fontSize="sm">
+                      Keep it up! Complete a cleanup tomorrow to maintain your streak.
+                    </AlertDescription>
+                  </VStack>
+                </Alert>
+              </VStack>
+            </TabPanel>
+
+            {/* Achievements Tab */}
+            <TabPanel overflow="y-auto" pb={24}>
+              <VStack spacing={6} align="stretch">
+                {/* Achievements Summary */}
+                <VStack spacing={1} align="flex-start">
+                  <Heading size="md" color="gray.900">
+                    Achievements
+                  </Heading>
+                  <Text fontSize="sm" color="gray.600">
+                    {earnedCount} of {ACHIEVEMENTS.length} earned
+                  </Text>
+                </VStack>
+
+                {/* Achievements Grid */}
+                <VStack spacing={3} align="stretch">
+                  {displayedAchievements.map((achievement) => (
+                    <Card
+                      key={achievement.id}
+                      bg={achievement.earned ? 'white' : 'gray.50'}
+                      border="1px solid"
+                      borderColor={achievement.earned ? 'green.200' : 'gray.200'}
+                      opacity={achievement.earned ? 1 : 0.75}
+                    >
+                      <CardBody>
+                        <HStack spacing={4} align="flex-start">
+                          <Box
+                            fontSize="2xl"
+                            w="12"
+                            h="12"
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="center"
+                            borderRadius="lg"
+                            flexShrink={0}
+                            bg={achievement.earned ? 'brand.100' : 'gray.200'}
+                          >
+                            {achievement.icon}
+                          </Box>
+
+                          <VStack align="flex-start" spacing={1} flex="1" minW="0">
+                            <Heading as="h3" size="sm" color="gray.900">
+                              {achievement.name}
+                            </Heading>
+                            <Text fontSize="sm" color="gray.600">
+                              {achievement.description}
+                            </Text>
+
+                            {achievement.earned ? (
+                              <Badge colorScheme="green" fontSize="xs" mt={2}>
+                                ✓ Earned {achievement.earnedDate}
+                              </Badge>
+                            ) : (
+                              <VStack align="stretch" spacing={1} w="full" mt={2}>
+                                <Progress
+                                  value={
+                                    achievement.progress.includes('/500')
+                                      ? (156 / 500) * 100
+                                      : achievement.progress.includes('/30')
+                                      ? (7 / 30) * 100
+                                      : (420 / 1000) * 100
+                                  }
+                                  size="sm"
+                                  colorScheme="brand"
+                                  borderRadius="full"
+                                />
+                                <Text fontSize="xs" color="gray.600">
+                                  {achievement.progress}
+                                </Text>
+                              </VStack>
+                            )}
+                          </VStack>
+                        </HStack>
+                      </CardBody>
+                    </Card>
+                  ))}
+                </VStack>
+
+                {/* Show More Button */}
+                {!showAllAchievements && ACHIEVEMENTS.length > 3 && (
+                  <Button
+                    variant="ghost"
+                    colorScheme="brand"
+                    w="full"
+                    mt={4}
+                    onClick={() => setShowAllAchievements(true)}
+                  >
+                    Show All Achievements ({ACHIEVEMENTS.length})
+                  </Button>
+                )}
+              </VStack>
+            </TabPanel>
+          </TabPanels>
+        </Tabs>
+      </Box>
+    </Flex>
   );
 };
 

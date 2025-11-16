@@ -1,4 +1,27 @@
 import React, { useState } from 'react';
+import {
+  Box,
+  VStack,
+  HStack,
+  Flex,
+  Card,
+  CardBody,
+  CardHeader,
+  CardFooter,
+  Heading,
+  Text,
+  Button,
+  Avatar,
+  Grid,
+  GridItem,
+  Stat,
+  StatLabel,
+  StatNumber,
+  IconButton,
+  Divider,
+  Spinner,
+} from '@chakra-ui/react';
+import { FiHeart, FiMessageCircle, FiShare2 } from 'react-icons/fi';
 
 // Mock data for activity feed
 const MOCK_ACTIVITIES = [
@@ -85,127 +108,176 @@ const FeedPage = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 pt-4 pb-6 safe-area-inset-top flex-shrink-0">
-        <h1 className="text-3xl font-bold mb-4">EcoSynk</h1>
+    <Flex direction="column" h="full" bg="gray.50" overflow="hidden" className="safe-area-inset">
+      {/* Header with Impact Stats */}
+      <Box
+        bgGradient="linear(to-r, brand.600, brand.500)"
+        color="white"
+        px={6}
+        pt={6}
+        pb={8}
+        className="safe-area-inset-top"
+        flexShrink={0}
+        boxShadow="sm"
+      >
+        <Heading as="h1" size="2xl" mb={6} fontWeight="bold">
+          EcoSynk
+        </Heading>
 
         {/* Today's Impact Stats */}
-        <div className="grid grid-cols-3 gap-2">
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center backdrop-blur-sm">
-            <div className="text-2xl font-bold">{TODAY_IMPACT.cleanups}</div>
-            <div className="text-xs opacity-90">Cleanups</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center backdrop-blur-sm">
-            <div className="text-2xl font-bold">{TODAY_IMPACT.itemsCollected}</div>
-            <div className="text-xs opacity-90">Items</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-3 text-center backdrop-blur-sm">
-            <div className="text-2xl font-bold">{TODAY_IMPACT.volunteers}</div>
-            <div className="text-xs opacity-90">Volunteers</div>
-          </div>
-        </div>
-      </div>
+        <Grid templateColumns="repeat(3, 1fr)" gap={3}>
+          <GridItem>
+            <Stat p={3} bg="whiteAlpha.20" backdropBlur="sm" borderRadius="lg">
+              <StatNumber fontSize="2xl" fontWeight="bold" mb={2}>
+                {TODAY_IMPACT.cleanups}
+              </StatNumber>
+              <StatLabel fontSize="xs" opacity={0.9}>
+                Cleanups
+              </StatLabel>
+            </Stat>
+          </GridItem>
+          <GridItem>
+            <Stat p={3} bg="whiteAlpha.20" backdropBlur="sm" borderRadius="lg">
+              <StatNumber fontSize="2xl" fontWeight="bold" mb={2}>
+                {TODAY_IMPACT.itemsCollected}
+              </StatNumber>
+              <StatLabel fontSize="xs" opacity={0.9}>
+                Items
+              </StatLabel>
+            </Stat>
+          </GridItem>
+          <GridItem>
+            <Stat p={3} bg="whiteAlpha.20" backdropBlur="sm" borderRadius="lg">
+              <StatNumber fontSize="2xl" fontWeight="bold" mb={2}>
+                {TODAY_IMPACT.volunteers}
+              </StatNumber>
+              <StatLabel fontSize="xs" opacity={0.9}>
+                Volunteers
+              </StatLabel>
+            </Stat>
+          </GridItem>
+        </Grid>
+      </Box>
 
       {/* Activity Feed */}
-      <div className="flex-1 overflow-y-auto">
+      <Box flex="1" overflowY="auto">
         {/* Section Header */}
-        <div className="px-4 pt-4 pb-2">
-          <h2 className="text-lg font-bold text-gray-900">Recent Activity</h2>
-        </div>
+        <Box px={6} pt={6} pb={3} flexShrink={0}>
+          <Heading as="h2" size="lg" color="gray.900">
+            Recent Activity
+          </Heading>
+        </Box>
 
         {/* Activity Cards */}
-        <div className="px-4 pb-20">
+        <VStack spacing={4} px={6} pb={24}>
           {activities.map((activity) => (
-            <div
+            <Card
               key={activity.id}
-              className="bg-white rounded-lg shadow-sm mb-4 overflow-hidden border border-gray-100 hover:shadow-md transition-shadow duration-200"
+              w="full"
+              bg="white"
+              border="1px solid"
+              borderColor="gray.100"
+              _hover={{ boxShadow: 'md' }}
+              transition="all 0.2s"
             >
               {/* Card Header */}
-              <div className="flex items-center justify-between p-4 border-b border-gray-100">
-                <div className="flex items-center space-x-3 flex-1">
-                  <div className="w-10 h-10 bg-gradient-to-r from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-lg">
-                    {activity.image}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-gray-900 truncate">{activity.user}</h3>
-                    <p className="text-sm text-gray-500">{activity.time}</p>
-                  </div>
-                </div>
-              </div>
+              <CardHeader pb={2} borderBottom="1px solid" borderBottomColor="gray.100">
+                <HStack justify="space-between">
+                  <HStack spacing={3} flex={1}>
+                    <Avatar
+                      size="md"
+                      name={activity.user}
+                      bg="brand.500"
+                    />
+                    <VStack align="flex-start" spacing={0}>
+                      <Text fontWeight="bold" color="gray.900">
+                        {activity.user}
+                      </Text>
+                      <Text fontSize="sm" color="gray.500">
+                        {activity.time}
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </HStack>
+              </CardHeader>
 
               {/* Card Body */}
-              <div className="px-4 py-3">
-                <p className="text-gray-700 mb-3">
-                  <span className="font-semibold">{activity.user}</span> {activity.action} at{' '}
-                  <span className="font-semibold text-green-600">{activity.location}</span>
-                </p>
+              <CardBody spacing={3}>
+                <Text color="gray.700">
+                  <strong>{activity.user}</strong> {activity.action} at{' '}
+                  <span style={{ color: '#2d7f4c', fontWeight: 'bold' }}>
+                    {activity.location}
+                  </span>
+                </Text>
 
-                {/* Stats Section */}
-                <div className="grid grid-cols-2 gap-2 bg-gray-50 rounded-lg p-3 mb-3">
+                {/* Stats Grid */}
+                <Grid templateColumns="repeat(2, 1fr)" gap={2} bg="gray.50" p={3} borderRadius="lg">
                   {Object.entries(activity.stats).map(([key, value]) => (
-                    <div key={key} className="text-center">
-                      <div className="text-lg font-bold text-green-600">{value}</div>
-                      <div className="text-xs text-gray-600 capitalize">{key}</div>
-                    </div>
+                    <GridItem key={key} textAlign="center">
+                      <Text fontSize="lg" fontWeight="bold" color="brand.600">
+                        {value}
+                      </Text>
+                      <Text fontSize="xs" color="gray.600" textTransform="capitalize">
+                        {key}
+                      </Text>
+                    </GridItem>
                   ))}
-                </div>
-              </div>
+                </Grid>
+              </CardBody>
 
-              {/* Card Footer - Engagement Buttons */}
-              <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
-                <button
-                  onClick={() => toggleLike(activity.id)}
-                  className={`flex items-center space-x-1 px-3 py-2 rounded-lg transition-colors duration-200 ${
-                    activity.liked
-                      ? 'text-red-600 bg-red-50'
-                      : 'text-gray-600 hover:bg-gray-200'
-                  }`}
-                  aria-label={activity.liked ? 'Unlike' : 'Like'}
-                >
-                  <span className="text-xl">{activity.liked ? '❤️' : '🤍'}</span>
-                  <span className="text-sm font-medium">{activity.likes}</span>
-                </button>
-
-                <button
-                  className="flex items-center space-x-1 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors duration-200"
-                  aria-label="Comment"
-                >
-                  <span className="text-xl">💬</span>
-                  <span className="text-sm font-medium">Comment</span>
-                </button>
-
-                <button
-                  className="flex items-center space-x-1 px-3 py-2 rounded-lg text-gray-600 hover:bg-gray-200 transition-colors duration-200"
-                  aria-label="Share"
-                >
-                  <span className="text-xl">📤</span>
-                  <span className="text-sm font-medium">Share</span>
-                </button>
-              </div>
-            </div>
+              {/* Card Footer - Engagement */}
+              <Divider />
+              <CardFooter>
+                <HStack justify="space-around" w="full" spacing={2}>
+                  <Button
+                    flex={1}
+                    variant="ghost"
+                    size="sm"
+                    color={activity.liked ? 'red.600' : 'gray.600'}
+                    bg={activity.liked ? 'red.50' : 'transparent'}
+                    leftIcon={<Icon as={FiHeart} fill={activity.liked ? 'currentColor' : 'none'} />}
+                    onClick={() => toggleLike(activity.id)}
+                  >
+                    {activity.likes}
+                  </Button>
+                  <Button
+                    flex={1}
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Icon as={FiMessageCircle} />}
+                    color="gray.600"
+                  >
+                    Comment
+                  </Button>
+                  <Button
+                    flex={1}
+                    variant="ghost"
+                    size="sm"
+                    leftIcon={<Icon as={FiShare2} />}
+                    color="gray.600"
+                  >
+                    Share
+                  </Button>
+                </HStack>
+              </CardFooter>
+            </Card>
           ))}
 
           {/* Load More Button */}
-          <div className="flex justify-center py-6">
-            <button
-              onClick={loadMoreActivities}
-              disabled={isLoading}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 transition-colors duration-200 min-h-12 flex items-center justify-center"
-            >
-              {isLoading ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Loading...
-                </>
-              ) : (
-                'Load More Activities'
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+          <Button
+            w="full"
+            colorScheme="brand"
+            onClick={loadMoreActivities}
+            isLoading={isLoading}
+            loadingText="Loading..."
+            size="md"
+            mt={4}
+          >
+            Load More Activities
+          </Button>
+        </VStack>
+      </Box>
+    </Flex>
   );
 };
 
