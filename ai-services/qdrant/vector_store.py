@@ -119,6 +119,25 @@ class EcoSynkVectorStore:
                 except Exception as e:
                     print(f"   ⚠️  Could not create geo-index: {e}")
             
+            # Campaigns Collection
+            if "campaigns" in existing_names:
+                if recreate:
+                    print(f"🗑️  Deleting existing collection: campaigns")
+                    self.client.delete_collection("campaigns")
+                else:
+                    print(f"✓ Collection already exists: campaigns")
+            
+            if recreate or "campaigns" not in existing_names:
+                print(f"📦 Creating collection: campaigns")
+                self.client.create_collection(
+                    collection_name="campaigns",
+                    vectors_config=VectorParams(
+                        size=settings.embedding_dimension,
+                        distance=Distance.COSINE
+                    )
+                )
+                print(f"✅ Created: campaigns")
+            
             print("\n🎉 All collections ready!")
             
         except Exception as e:
@@ -195,39 +214,45 @@ class EcoSynkVectorStore:
         try:
             query_filter = None
             
-            # Build filter conditions
-            if location_filter or time_window_days:
-                conditions = []
-                
-                if time_window_days:
-                    from datetime import timedelta
-                    cutoff = (datetime.utcnow() - timedelta(days=time_window_days)).isoformat()
-                    conditions.append(
-                        FieldCondition(
-                            key="timestamp",
-                            range=Range(gte=cutoff)
-                        )
-                    )
-                
-                if conditions:
-                    query_filter = Filter(must=conditions)
-            
+            # Note: Time filtering done in post-processing because timestamps are strings
+            # Qdrant's Range filter requires numeric fields
             results = self.client.search(
                 collection_name=settings.trash_reports_collection,
                 query_vector=embedding,
-                limit=limit,
-                score_threshold=score_threshold,
-                query_filter=query_filter
+                limit=limit * 2,  # Get more results for post-filtering
+                score_threshold=score_threshold
             )
             
-            # Format results
+            # Format results and apply time filter in post-processing
             formatted_results = []
+            
+            # Calculate cutoff date if time filter specified
+            cutoff_date = None
+            if time_window_days:
+                from datetime import timedelta
+                cutoff_date = datetime.utcnow() - timedelta(days=time_window_days)
+            
             for result in results:
+                # Apply time filter if specified
+                if cutoff_date:
+                    timestamp_str = result.payload.get('timestamp') or result.payload.get('metadata', {}).get('analyzed_at')
+                    if timestamp_str:
+                        try:
+                            report_date = datetime.fromisoformat(timestamp_str.replace('Z', '+00:00'))
+                            if report_date < cutoff_date:
+                                continue  # Skip reports older than cutoff
+                        except:
+                            pass  # If parsing fails, include the report
+                
                 formatted_results.append({
                     'id': result.id,
                     'score': result.score,
                     'data': result.payload
                 })
+                
+                # Stop when we have enough results
+                if len(formatted_results) >= limit:
+                    break
             
             print(f"🔍 Found {len(formatted_results)} similar reports")
             return formatted_results
@@ -425,6 +450,103 @@ class EcoSynkVectorStore:
         except Exception as e:
             print(f"❌ Error getting stats: {e}")
             return {}
+    
+    def store_campaign(
+        self,
+        embedding: List[float],
+        campaign_data: Dict[str, Any],
+        campaign_id: str
+    ) -> str:
+        """
+        Store a campaign in Qdrant
+        
+        Args:
+            embedding: Vector embedding (from campaign name/description)
+            campaign_data: Complete campaign object
+            campaign_id: Campaign ID
+            
+        Returns:
+            The campaign ID
+        """
+        try:
+            # Use UUID for Qdrant point ID, store campaign_id in payload
+            point_id = str(uuid.uuid4())
+            
+            self.client.upsert(
+                collection_name="campaigns",
+                points=[
+                    PointStruct(
+                        id=point_id,
+                        vector=embedding,
+                        payload=campaign_data
+                    )
+                ]
+            )
+            
+            print(f"✅ Stored campaign: {campaign_id}")
+            return campaign_id
+            
+        except Exception as e:
+            print(f"❌ Error storing campaign: {e}")
+            raise
+    
+    def get_all_campaigns(self) -> List[Dict[str, Any]]:
+        """Get all campaigns from Qdrant"""
+        try:
+            results = self.client.scroll(
+                collection_name="campaigns",
+                limit=100,
+                with_payload=True,
+                with_vectors=False
+            )
+            
+            campaigns = [point.payload for point in results[0]]
+            return campaigns
+            
+        except Exception as e:
+            print(f"❌ Error fetching campaigns: {e}")
+            return []
+    
+    def get_active_campaigns(self) -> List[Dict[str, Any]]:
+        """Get all active campaigns (not expired, status='active')"""
+        try:
+            all_campaigns = self.get_all_campaigns()
+            now = datetime.utcnow()
+            
+            active = []
+            for campaign in all_campaigns:
+                try:
+                    end_date_str = campaign.get('timeline', {}).get('end_date')
+                    if not end_date_str:
+                        continue
+                    
+                    end_date = datetime.fromisoformat(end_date_str.replace('Z', '+00:00'))
+                    status = campaign.get('status', 'unknown')
+                    
+                    if end_date > now and status == 'active':
+                        active.append(campaign)
+                except:
+                    continue
+            
+            # Sort by creation date (newest first)
+            active.sort(key=lambda c: c.get('created_at', ''), reverse=True)
+            return active
+            
+        except Exception as e:
+            print(f"❌ Error fetching active campaigns: {e}")
+            return []
+    
+    def get_campaign_by_id(self, campaign_id: str) -> Optional[Dict[str, Any]]:
+        """Get a specific campaign by ID"""
+        try:
+            all_campaigns = self.get_all_campaigns()
+            for campaign in all_campaigns:
+                if campaign.get('campaign_id') == campaign_id:
+                    return campaign
+            return None
+        except Exception as e:
+            print(f"❌ Error fetching campaign: {e}")
+            return None
 
 
 # Standalone test
