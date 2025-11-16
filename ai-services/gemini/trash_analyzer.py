@@ -116,11 +116,17 @@ Important:
             # Call Gemini API
             print(f"🔍 Analyzing image: {image_path_obj.name}...")
             
+            # Determine MIME type (normalize .jpg to .jpeg)
+            file_ext = image_path_obj.suffix[1:].lower()
+            if file_ext == 'jpg':
+                file_ext = 'jpeg'
+            mime_type = f"image/{file_ext}"
+            
             # Create content with image
             response = self.model.generate_content([
                 prompt,
                 {
-                    "mime_type": f"image/{image_path_obj.suffix[1:]}",
+                    "mime_type": mime_type,
                     "data": image_data
                 }
             ])

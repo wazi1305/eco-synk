@@ -181,6 +181,122 @@ def create_mock_data():
         except Exception as e:
             print(f"  ✗ Failed to create report {i}: {e}")
     
+    # Create mock campaigns
+    print("\n" + "=" * 60)
+    print("3. Creating Mock Campaigns")
+    print("=" * 60)
+    
+    campaigns = [
+        {
+            "campaign_id": "campaign_001",
+            "campaign_name": "Downtown Plastic Cleanup Initiative",
+            "status": "active",
+            "created_at": "2025-11-01T10:00:00",
+            "location": {"lat": 37.7749, "lon": -122.4194},
+            "hotspot": {
+                "report_count": 3,
+                "report_ids": ["report_001", "report_002", "report_005"],
+                "average_priority": 7.3,
+                "materials": ["plastic", "metal"]
+            },
+            "goals": {
+                "target_funding_usd": 1000,
+                "current_funding_usd": 450,
+                "funding_progress_percent": 45,
+                "volunteer_goal": 25,
+                "current_volunteers": 12,
+                "volunteer_progress_percent": 48
+            },
+            "timeline": {
+                "start_date": "2025-11-01T00:00:00",
+                "duration_days": 60,
+                "end_date": "2025-12-31T00:00:00"
+            },
+            "impact_estimates": {
+                "estimated_waste_kg": 75,
+                "estimated_volunteer_hours": 50,
+                "estimated_co2_reduction_kg": 37.5
+            }
+        },
+        {
+            "campaign_id": "campaign_002",
+            "campaign_name": "River Cleanup Campaign",
+            "status": "active",
+            "created_at": "2025-11-10T14:30:00",
+            "location": {"lat": 37.78, "lon": -122.42},
+            "hotspot": {
+                "report_count": 2,
+                "report_ids": ["report_002", "report_003"],
+                "average_priority": 8.5,
+                "materials": ["metal", "hazardous"]
+            },
+            "goals": {
+                "target_funding_usd": 2000,
+                "current_funding_usd": 800,
+                "funding_progress_percent": 40,
+                "volunteer_goal": 30,
+                "current_volunteers": 8,
+                "volunteer_progress_percent": 27
+            },
+            "timeline": {
+                "start_date": "2025-11-10T00:00:00",
+                "duration_days": 45,
+                "end_date": "2025-12-25T00:00:00"
+            },
+            "impact_estimates": {
+                "estimated_waste_kg": 100,
+                "estimated_volunteer_hours": 60,
+                "estimated_co2_reduction_kg": 50
+            }
+        },
+        {
+            "campaign_id": "campaign_003",
+            "campaign_name": "Community Garden Cleanup",
+            "status": "active",
+            "created_at": "2025-11-14T09:00:00",
+            "location": {"lat": 37.755, "lon": -122.44},
+            "hotspot": {
+                "report_count": 2,
+                "report_ids": ["report_004", "report_005"],
+                "average_priority": 5.5,
+                "materials": ["organic", "plastic"]
+            },
+            "goals": {
+                "target_funding_usd": 500,
+                "current_funding_usd": 100,
+                "funding_progress_percent": 20,
+                "volunteer_goal": 15,
+                "current_volunteers": 3,
+                "volunteer_progress_percent": 20
+            },
+            "timeline": {
+                "start_date": "2025-11-14T00:00:00",
+                "duration_days": 30,
+                "end_date": "2025-12-14T00:00:00"
+            },
+            "impact_estimates": {
+                "estimated_waste_kg": 50,
+                "estimated_volunteer_hours": 30,
+                "estimated_co2_reduction_kg": 25
+            }
+        }
+    ]
+    
+    for i, campaign in enumerate(campaigns, 1):
+        try:
+            # Generate embedding from campaign name and materials
+            campaign_text = f"{campaign['campaign_name']} {' '.join(campaign['hotspot']['materials'])}"
+            embedding = embedder.generate_query_embedding(campaign_text)
+            
+            vector_store.store_campaign(
+                embedding=embedding,
+                campaign_data=campaign,
+                campaign_id=campaign['campaign_id']
+            )
+            print(f"  ✓ Created campaign: {campaign['campaign_name']}")
+        except Exception as e:
+            print(f"  ✗ Failed to create campaign {i}: {e}")
+    
     # Show final stats
     print("\n" + "=" * 60)
     print("📊 Final Statistics:")
