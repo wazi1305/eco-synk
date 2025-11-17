@@ -1,13 +1,4 @@
 # Core AI/ML Libraries
-<<<<<<< HEAD
-google-generativeai>=0.3.0
-qdrant-client>=1.11.0
-sentence-transformers>=2.0.0
-
-# Web Framework
-fastapi>=0.100.0
-uvicorn[standard]>=0.20.0
-=======
 google-generativeai>=0.8.0
 qdrant-client>=1.15.0
 sentence-transformers>=2.5.1
@@ -15,22 +6,10 @@ sentence-transformers>=2.5.1
 # Web Framework
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
->>>>>>> fdfe390 (updated requirements.txt + mock server to test opus workflow)
 python-multipart>=0.0.6
 
 # Utilities
 python-dotenv>=1.0.0
-<<<<<<< HEAD
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-httpx>=0.26.0
-pillow>=10.0.0
-numpy>=1.24.0
-
-# Development & Testing
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
-=======
 pydantic>=2.5.3
 pydantic-settings>=2.1.0
 httpx>=0.26.0
@@ -40,6 +19,5 @@ numpy>=1.24.3
 # Development & Testing
 pytest>=7.4.3
 pytest-asyncio>=0.21.1
->>>>>>> fdfe390 (updated requirements.txt + mock server to test opus workflow)
 requests>=2.31.0
 
