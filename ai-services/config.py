@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     # Model Configuration
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dimension: int = 384
-    gemini_model: str = "gemini-2.0-flash-exp"
+    gemini_model: str = "gemini-2.5-flash"
     
     # Qdrant Configuration
     trash_reports_collection: str = "trash_reports"
