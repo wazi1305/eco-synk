@@ -56,6 +56,50 @@ const computeDaysRemaining = (endDate) => {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 };
 
+const reverseGeocode = async (lat, lng) => {
+  try {
+    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+    const data = await response.json();
+    
+    if (data.address) {
+      const addr = data.address;
+      const parts = [];
+      
+      if (addr.house_number && addr.road) {
+        parts.push(`${addr.house_number} ${addr.road}`);
+      } else if (addr.road) {
+        parts.push(addr.road);
+      }
+      
+      if (addr.neighbourhood) {
+        parts.push(addr.neighbourhood);
+      } else if (addr.suburb) {
+        parts.push(addr.suburb);
+      }
+      
+      if (addr.city) {
+        parts.push(addr.city);
+      } else if (addr.town) {
+        parts.push(addr.town);
+      }
+      
+      if (addr.state && !parts.includes(addr.state)) {
+        parts.push(addr.state);
+      }
+      
+      if (addr.country && !parts.includes(addr.country)) {
+        parts.push(addr.country);
+      }
+      
+      return parts.length > 0 ? parts.join(', ') : data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
+    
+    return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  } catch (error) {
+    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+  }
+};
+
 const normalizeLocation = (locationPayload) => {
   if (!locationPayload) {
     return { lat: null, lng: null, address: 'Unknown location' };
@@ -99,12 +143,22 @@ const determineBadge = (cleanupCount = 0) => {
 
 export const getBadgeForCleanupCount = determineBadge;
 
-export const transformQdrantCampaign = (payload, options = {}) => {
+export const transformQdrantCampaign = async (payload, options = {}) => {
   if (!payload) {
     return null;
   }
 
-  const location = normalizeLocation(payload.location);
+  let location = normalizeLocation(payload.location);
+  
+  // If no address but has coordinates, try reverse geocoding
+  if (location.lat && location.lng && (!payload.location?.address && !payload.location?.label)) {
+    try {
+      const geocodedAddress = await reverseGeocode(location.lat, location.lng);
+      location.address = geocodedAddress;
+    } catch (error) {
+      // Keep the default address if geocoding fails
+    }
+  }
   const priorityScore = payload.hotspot?.average_priority ?? payload.priority_score ?? 5;
   const priority = payload.status === 'completed' ? 'completed' : inferPriority(priorityScore);
   const organizer = payload.organizer || DEFAULT_ORGANIZER;
@@ -164,12 +218,23 @@ export const transformQdrantCampaign = (payload, options = {}) => {
   };
 };
 
-export const transformQdrantVolunteer = (payload, options = {}) => {
+export const transformQdrantVolunteer = async (payload, options = {}) => {
   if (!payload) {
     return null;
   }
 
-  const location = normalizeLocation(payload.location || payload.metadata?.location || null);
+  let location = normalizeLocation(payload.location || payload.metadata?.location || null);
+  
+  // If no address but has coordinates, try reverse geocoding
+  const locationData = payload.location || payload.metadata?.location;
+  if (location.lat && location.lng && (!locationData?.address && !locationData?.label)) {
+    try {
+      const geocodedAddress = await reverseGeocode(location.lat, location.lng);
+      location.address = geocodedAddress;
+    } catch (error) {
+      // Keep the default address if geocoding fails
+    }
+  }
   const pastCleanupCount = payload.past_cleanup_count ?? payload.stats?.cleanups ?? 0;
   const volunteer = {
     id: payload.user_id || payload.id,
@@ -212,12 +277,23 @@ export const transformQdrantVolunteer = (payload, options = {}) => {
   return volunteer;
 };
 
-export const transformQdrantTrashReport = (payload, options = {}) => {
+export const transformQdrantTrashReport = async (payload, options = {}) => {
   if (!payload) {
     return null;
   }
   const metadata = payload.metadata || {};
-  const location = normalizeLocation(metadata.location || payload.location || null);
+  let location = normalizeLocation(metadata.location || payload.location || null);
+  
+  // If no address but has coordinates, try reverse geocoding
+  const locationData = metadata.location || payload.location;
+  if (location.lat && location.lng && (!locationData?.address && !locationData?.label)) {
+    try {
+      const geocodedAddress = await reverseGeocode(location.lat, location.lng);
+      location.address = geocodedAddress;
+    } catch (error) {
+      // Keep the default address if geocoding fails
+    }
+  }
   const timestamp = payload.timestamp || metadata.analyzed_at || metadata.timestamp || null;
 
   const report = {
