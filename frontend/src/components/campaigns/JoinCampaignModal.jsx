@@ -71,6 +71,8 @@ import {
   FiPlusCircle,
   FiCheck,
 } from 'react-icons/fi';
+import { WiDaySunny, WiCloudy, WiRain, WiThunderstorm, WiSnow, WiFog } from 'react-icons/wi';
+import { getCurrentWeather, getWeatherRecommendation, parseLocationCoordinates } from '../../services/weatherService';
 
 const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
   const [selectedRole, setSelectedRole] = useState('volunteer');
@@ -82,21 +84,45 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
   const [activeTab, setActiveTab] = useState(0);
   const toast = useToast();
 
-  // Simulate weather data fetch
+  // Fetch real weather data
   useEffect(() => {
-    if (isOpen && campaign) {
-      setTimeout(() => {
-        setWeatherData({
-          temperature: 28,
-          condition: 'Sunny',
-          icon: FiSun,
-          precipitation: 5,
-          windSpeed: 12,
-          recommendation: 'Perfect weather for outdoor activities! Stay hydrated.'
-        });
-        setLoadingWeather(false);
-      }, 1000);
-    }
+    const fetchWeather = async () => {
+      if (isOpen && campaign) {
+        setLoadingWeather(true);
+        try {
+          const coords = parseLocationCoordinates(campaign.location);
+          const weather = await getCurrentWeather(coords.lat, coords.lon);
+          
+          // Map weather condition to icon
+          const iconMap = {
+            'Clear': WiDaySunny,
+            'Clouds': WiCloudy,
+            'Rain': WiRain,
+            'Drizzle': WiRain,
+            'Thunderstorm': WiThunderstorm,
+            'Snow': WiSnow,
+            'Mist': WiFog,
+            'Fog': WiFog,
+            'Haze': WiCloudy
+          };
+          
+          setWeatherData({
+            ...weather,
+            icon: iconMap[weather.condition] || WiCloudy,
+            recommendation: getWeatherRecommendation(weather)
+          });
+        } catch (error) {
+          console.error('Error fetching weather:', error);
+          setWeatherData({
+            error: true,
+            errorMessage: error.message || 'Failed to load weather data'
+          });
+          setLoadingWeather(false);
+        }
+      }
+    };
+    
+    fetchWeather();
   }, [isOpen, campaign]);
 
   // Difficulty levels
@@ -163,48 +189,50 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="5xl" scrollBehavior="inside">
-      <ModalOverlay bg="blackAlpha.600" />
-      <ModalContent maxH="90vh">
-        <ModalHeader pb={2}>
+      <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
+      <ModalContent maxH="90vh" bg="neutral.800" borderColor="neutral.700" border="1px solid">
+        <ModalHeader pb={2} bg="neutral.900" borderTopRadius="md">
           <HStack justify="space-between">
             <VStack align="start" spacing={1}>
-              <Heading size="lg" color="brand.600">{campaign.title}</Heading>
+              <Heading size="lg" color="brand.500" fontWeight="700">{campaign.title}</Heading>
               <HStack spacing={4}>
                 <Badge 
-                  colorScheme={difficulty.color} 
-                  variant="subtle" 
+                  bg="rgba(47, 212, 99, 0.1)"
+                  color="brand.500"
+                  border="1px solid"
+                  borderColor="brand.500"
                   fontSize="sm"
                 >
                   {difficulty.label} Level
                 </Badge>
-                <Badge colorScheme="purple" variant="outline">
+                <Badge bg="rgba(159, 122, 234, 0.1)" color="purple.400" border="1px solid" borderColor="purple.500">
                   +{Math.round(basePoints * pointsMultiplier)} Points (x{pointsMultiplier})
                 </Badge>
-                <HStack spacing={1} color="gray.600">
+                <HStack spacing={1} color="neutral.400">
                   <Icon as={FiMapPin} boxSize={4} />
                   <Text fontSize="sm">{campaign.location?.address}</Text>
                 </HStack>
               </HStack>
             </VStack>
             {rsvpConfirmed && (
-              <Badge colorScheme="green" variant="solid" p={2}>
+              <Badge bg="rgba(72, 187, 120, 0.2)" color="green.400" border="1px solid" borderColor="green.500" p={2}>
                 <Icon as={FiCheck} mr={1} />
                 RSVP Confirmed
               </Badge>
             )}
           </HStack>
         </ModalHeader>
-        <ModalCloseButton />
+        <ModalCloseButton color="neutral.400" _hover={{ bg: 'neutral.700', color: 'neutral.50' }} />
         
         <ModalBody>
-          <Tabs index={activeTab} onChange={setActiveTab} variant="enclosed" size="sm">
-            <TabList mb={4} flexWrap="wrap">
-              <Tab>Overview</Tab>
-              <Tab>Requirements</Tab>
-              <Tab>Preparation</Tab>
-              <Tab>Location & Weather</Tab>
-              <Tab>Safety</Tab>
-              <Tab>Community</Tab>
+          <Tabs index={activeTab} onChange={setActiveTab} size="sm">
+            <TabList mb={4} flexWrap="wrap" borderBottomColor="neutral.700">
+              <Tab color="neutral.400" _selected={{ color: 'brand.500', borderColor: 'brand.500' }}>Overview</Tab>
+              <Tab color="neutral.400" _selected={{ color: 'brand.500', borderColor: 'brand.500' }}>Requirements</Tab>
+              <Tab color="neutral.400" _selected={{ color: 'brand.500', borderColor: 'brand.500' }}>Preparation</Tab>
+              <Tab color="neutral.400" _selected={{ color: 'brand.500', borderColor: 'brand.500' }}>Location & Weather</Tab>
+              <Tab color="neutral.400" _selected={{ color: 'brand.500', borderColor: 'brand.500' }}>Safety</Tab>
+              <Tab color="neutral.400" _selected={{ color: 'brand.500', borderColor: 'brand.500' }}>Community</Tab>
             </TabList>
 
             <TabPanels>
@@ -215,7 +243,7 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                   <Grid templateColumns={{ base: "1fr", lg: "1fr 300px" }} gap={6}>
                     <Box>
                       <Box
-                        bgGradient="linear(to-br, brand.400, brand.600)"
+                        bgGradient={campaign.heroImage ? undefined : "linear(to-br, brand.400, brand.600)"}
                         h="200px"
                         display="flex"
                         alignItems="center"
@@ -226,37 +254,47 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                         position="relative"
                         overflow="hidden"
                       >
-                        {campaign.image}
+                        {campaign.heroImage ? (
+                          <Image
+                            src={campaign.heroImage}
+                            alt={`${campaign.title} banner`}
+                            objectFit="cover"
+                            w="100%"
+                            h="100%"
+                          />
+                        ) : (
+                          campaign.image
+                        )}
                       </Box>
                     </Box>
                     
                     <VStack spacing={4} align="stretch">
                       <Grid templateColumns="repeat(2, 1fr)" gap={4}>
                         <Stat>
-                          <StatLabel fontSize="xs">Volunteers</StatLabel>
-                          <StatNumber fontSize="lg">{campaign.volunteers?.length || 0}</StatNumber>
+                          <StatLabel fontSize="xs" color="neutral.400">Volunteers</StatLabel>
+                          <StatNumber fontSize="lg" color="neutral.50" fontWeight="700">{campaign.volunteers?.length || 0}</StatNumber>
                           <StatHelpText>
-                            <Text color="green.500">+5 this week</Text>
+                            <Text color="green.400">+5 this week</Text>
                           </StatHelpText>
                         </Stat>
                         <Stat>
-                          <StatLabel fontSize="xs">Spots Left</StatLabel>
-                          <StatNumber fontSize="lg" color="orange.500">
+                          <StatLabel fontSize="xs" color="neutral.400">Spots Left</StatLabel>
+                          <StatNumber fontSize="lg" color="orange.400" fontWeight="700">
                             {campaign.volunteerGoal - (campaign.volunteers?.length || 0)}
                           </StatNumber>
                           <StatHelpText>
-                            <Text color="red.500">Filling fast</Text>
+                            <Text color="red.400">Filling fast</Text>
                           </StatHelpText>
                         </Stat>
                       </Grid>
                       
-                      <Box p={4} bg="brand.50" borderRadius="lg" border="1px" borderColor="brand.200">
+                      <Box p={4} bg="rgba(47, 212, 99, 0.1)" borderRadius="12px" border="1px" borderColor="brand.500">
                         <VStack spacing={2}>
                           <Icon as={FiAward} color="brand.500" boxSize={6} />
-                          <Text fontWeight="semibold" color="brand.700" textAlign="center">
+                          <Text fontWeight="600" color="brand.500" textAlign="center">
                             Earn {Math.round(basePoints * pointsMultiplier)} EcoPoints
                           </Text>
-                          <Text fontSize="xs" color="gray.600" textAlign="center">
+                          <Text fontSize="xs" color="neutral.400" textAlign="center">
                             {pointsMultiplier > 1 ? `${pointsMultiplier}x bonus for difficulty!` : 'Base reward'}
                           </Text>
                         </VStack>
@@ -267,38 +305,57 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                   {/* Progress & Description */}
                   <Box>
                     <HStack justify="space-between" mb={2}>
-                      <Text fontWeight="semibold">Volunteer Progress</Text>
-                      <Text fontSize="sm" color="gray.600">
+                      <Text fontWeight="600" color="neutral.50">Volunteer Progress</Text>
+                      <Text fontSize="sm" color="neutral.400" fontWeight="700">
                         {Math.round(((campaign.volunteers?.length || 0) / campaign.volunteerGoal) * 100)}%
                       </Text>
                     </HStack>
                     <Progress 
                       value={((campaign.volunteers?.length || 0) / campaign.volunteerGoal) * 100} 
-                      colorScheme="green" 
-                      borderRadius="full" 
+                      borderRadius="full"
+                      bg="neutral.700"
+                      sx={{
+                        '& > div': {
+                          bg: 'brand.500',
+                          boxShadow: '0 0 10px rgba(47, 212, 99, 0.4)'
+                        }
+                      }}
                     />
                   </Box>
 
                   <Box>
-                    <Heading size="sm" mb={2}>About This Campaign</Heading>
-                    <Text color="gray.700" lineHeight="1.6">
+                    <Heading size="sm" mb={2} color="neutral.50" fontWeight="700">About This Campaign</Heading>
+                    <Text color="neutral.300" lineHeight="1.6">
                       {campaign.description || 'Join us in making a real environmental impact! This campaign focuses on cleaning up local waterways and restoring natural habitats. We\'ll be working together to remove debris, plant native vegetation, and educate the community about sustainable practices. Your participation helps create lasting change for future generations.'}
                     </Text>
                   </Box>
 
                   {/* Organizer */}
-                  <Box p={4} bg="gray.50" borderRadius="lg">
+                  <Box p={4} bg="neutral.700" borderRadius="12px" border="1px solid" borderColor="neutral.600">
                     <HStack spacing={4}>
-                      <Avatar size="lg" name={campaign.organizer?.name} />
+                      <Avatar 
+                        size="lg" 
+                        name={campaign.organizer?.name}
+                        bg="rgba(47, 212, 99, 0.1)"
+                        border="2px solid"
+                        borderColor="brand.500"
+                        color="brand.500"
+                      />
                       <VStack align="start" spacing={1} flex={1}>
-                        <Text fontWeight="semibold">{campaign.organizer?.name}</Text>
-                        <Text fontSize="sm" color="gray.600">Campaign Organizer</Text>
-                        <HStack>
+                        <Text fontWeight="600" color="neutral.50">{campaign.organizer?.name}</Text>
+                        <Text fontSize="sm" color="neutral.400">Campaign Organizer</Text>
+                        <HStack color="neutral.300">
                           <Icon as={FiStar} color="yellow.400" />
                           <Text fontSize="sm">4.8 • Organized 12 campaigns</Text>
                         </HStack>
                       </VStack>
-                      <Button size="sm" variant="outline">
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        borderColor="neutral.600"
+                        color="neutral.200"
+                        _hover={{ bg: 'neutral.600', borderColor: 'brand.500', color: 'brand.500' }}
+                      >
                         <Icon as={FiMessageCircle} mr={2} />
                         Message
                       </Button>
@@ -307,15 +364,21 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
 
                   {/* RSVP Section */}
                   {!rsvpConfirmed && (
-                    <Alert status="info" borderRadius="lg">
-                      <AlertIcon />
+                    <Alert status="info" borderRadius="12px" bg="rgba(66, 153, 225, 0.1)" border="1px solid" borderColor="blue.500">
+                      <AlertIcon color="blue.400" />
                       <Box flex={1}>
-                        <AlertTitle fontSize="sm">Ready to join?</AlertTitle>
-                        <AlertDescription fontSize="sm">
+                        <AlertTitle fontSize="sm" color="neutral.50">Ready to join?</AlertTitle>
+                        <AlertDescription fontSize="sm" color="neutral.300">
                           Complete your RSVP to secure your spot and receive updates.
                         </AlertDescription>
                       </Box>
-                      <Button size="sm" colorScheme="blue" onClick={handleRSVP}>
+                      <Button 
+                        size="sm" 
+                        bg="blue.500"
+                        color="white"
+                        _hover={{ bg: 'blue.600' }}
+                        onClick={handleRSVP}
+                      >
                         RSVP Now
                       </Button>
                     </Alert>
@@ -327,15 +390,15 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
               <TabPanel p={0}>
                 <VStack spacing={6} align="stretch">
                   {/* Difficulty Rating */}
-                  <Box p={6} bg={`${difficulty.color}.50`} borderRadius="lg" border="2px" borderColor={`${difficulty.color}.200`}>
+                  <Box p={6} bg="rgba(47, 212, 99, 0.08)" borderRadius="12px" border="2px" borderColor="brand.500">
                     <VStack spacing={3}>
-                      <Badge colorScheme={difficulty.color} variant="solid" fontSize="md" p={2}>
+                      <Badge bg="brand.500" color="neutral.900" fontSize="md" p={2}>
                         {difficulty.label} Difficulty
                       </Badge>
-                      <Text fontSize="lg" fontWeight="semibold" textAlign="center">
+                      <Text fontSize="lg" fontWeight="600" textAlign="center" color="neutral.50">
                         {difficulty.description}
                       </Text>
-                      <Text fontSize="sm" color="gray.600" textAlign="center">
+                      <Text fontSize="sm" color="neutral.400" textAlign="center">
                         {difficulty.requirements}
                       </Text>
                     </VStack>
@@ -343,15 +406,15 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
 
                   {/* Participation Options */}
                   <Box>
-                    <Heading size="sm" mb={4}>How would you like to participate?</Heading>
+                    <Heading size="sm" mb={4} color="neutral.50" fontWeight="700">How would you like to participate?</Heading>
                     <RadioGroup value={selectedRole} onChange={setSelectedRole}>
                       <VStack spacing={4} align="stretch">
-                        <Box p={4} border="2px" borderColor={selectedRole === 'volunteer' ? 'brand.500' : 'gray.200'} borderRadius="lg">
-                          <Radio value="volunteer" size="lg">
+                        <Box p={4} border="2px" borderColor={selectedRole === 'volunteer' ? 'brand.500' : 'neutral.700'} borderRadius="lg" bg={selectedRole === 'volunteer' ? 'rgba(47,212,99,0.08)' : 'neutral.700'} transition="all 0.2s">
+                          <Radio value="volunteer" size="lg" colorScheme="brand">
                             <VStack align="start" spacing={2} ml={3}>
-                              <Text fontWeight="semibold">Volunteer (+{Math.round(basePoints * pointsMultiplier)} points)</Text>
-                              <Text fontSize="sm" color="gray.600">Join hands-on cleanup activities</Text>
-                              <HStack>
+                              <Text fontWeight="700" color="neutral.50">Volunteer (+{Math.round(basePoints * pointsMultiplier)} points)</Text>
+                              <Text fontSize="sm" color="neutral.300">Join hands-on cleanup activities</Text>
+                              <HStack color="neutral.400">
                                 <Icon as={FiClock} boxSize={3} />
                                 <Text fontSize="xs">Full day commitment</Text>
                               </HStack>
@@ -359,12 +422,12 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                           </Radio>
                         </Box>
                         
-                        <Box p={4} border="2px" borderColor={selectedRole === 'supporter' ? 'brand.500' : 'gray.200'} borderRadius="lg">
-                          <Radio value="supporter" size="lg">
+                        <Box p={4} border="2px" borderColor={selectedRole === 'supporter' ? 'brand.500' : 'neutral.700'} borderRadius="lg" bg={selectedRole === 'supporter' ? 'rgba(47,212,99,0.08)' : 'neutral.700'} transition="all 0.2s">
+                          <Radio value="supporter" size="lg" colorScheme="brand">
                             <VStack align="start" spacing={2} ml={3}>
-                              <Text fontWeight="semibold">Supporter (+{Math.round(basePoints * 0.5)} points)</Text>
-                              <Text fontSize="sm" color="gray.600">Provide financial support for supplies</Text>
-                              <HStack>
+                              <Text fontWeight="700" color="neutral.50">Supporter (+{Math.round(basePoints * 0.5)} points)</Text>
+                              <Text fontSize="sm" color="neutral.300">Provide financial support for supplies</Text>
+                              <HStack color="neutral.400">
                                 <Icon as={FiHeart} boxSize={3} />
                                 <Text fontSize="xs">Any amount helps</Text>
                               </HStack>
@@ -372,12 +435,12 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                           </Radio>
                         </Box>
                         
-                        <Box p={4} border="2px" borderColor={selectedRole === 'ambassador' ? 'brand.500' : 'gray.200'} borderRadius="lg">
-                          <Radio value="ambassador" size="lg">
+                        <Box p={4} border="2px" borderColor={selectedRole === 'ambassador' ? 'brand.500' : 'neutral.700'} borderRadius="lg" bg={selectedRole === 'ambassador' ? 'rgba(47,212,99,0.08)' : 'neutral.700'} transition="all 0.2s">
+                          <Radio value="ambassador" size="lg" colorScheme="brand">
                             <VStack align="start" spacing={2} ml={3}>
-                              <Text fontWeight="semibold">Ambassador (+{Math.round(basePoints * 0.8)} points)</Text>
-                              <Text fontSize="sm" color="gray.600">Help spread awareness and recruit others</Text>
-                              <HStack>
+                              <Text fontWeight="700" color="neutral.50">Ambassador (+{Math.round(basePoints * 0.8)} points)</Text>
+                              <Text fontSize="sm" color="neutral.300">Help spread awareness and recruit others</Text>
+                              <HStack color="neutral.400">
                                 <Icon as={FiShare2} boxSize={3} />
                                 <Text fontSize="xs">Social media & outreach</Text>
                               </HStack>
@@ -390,9 +453,9 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
 
                   {/* Group Registration */}
                   <Box>
-                    <Heading size="sm" mb={3}>Bringing others?</Heading>
+                    <Heading size="sm" mb={3} color="neutral.50" fontWeight="700">Bringing others?</Heading>
                     <HStack spacing={4}>
-                      <Text fontSize="sm">Number of people:</Text>
+                      <Text fontSize="sm" color="neutral.300">Number of people:</Text>
                       <NumberInput 
                         value={attendeeCount} 
                         onChange={(value) => setAttendeeCount(Number(value) || 1)}
@@ -401,14 +464,14 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                         size="sm"
                         width="100px"
                       >
-                        <NumberInputField />
+                        <NumberInputField bg="neutral.700" border="1px solid" borderColor="neutral.600" color="neutral.50" _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }} />
                         <NumberInputStepper>
-                          <NumberIncrementStepper />
-                          <NumberDecrementStepper />
+                          <NumberIncrementStepper borderColor="neutral.600" color="neutral.400" _hover={{ color: 'brand.500' }} />
+                          <NumberDecrementStepper borderColor="neutral.600" color="neutral.400" _hover={{ color: 'brand.500' }} />
                         </NumberInputStepper>
                       </NumberInput>
                       {attendeeCount > 1 && (
-                        <Text fontSize="sm" color="green.600">
+                        <Text fontSize="sm" color="brand.500" fontWeight="600">
                           +{Math.round((attendeeCount - 1) * basePoints * 0.3)} bonus points for group participation!
                         </Text>
                       )}
@@ -422,8 +485,8 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                 <VStack spacing={6} align="stretch">
                   <Box>
                     <HStack justify="space-between" mb={4}>
-                      <Heading size="sm">Preparation Checklist</Heading>
-                      <Text fontSize="sm" color="gray.600">
+                      <Heading size="sm" color="neutral.50" fontWeight="700">Preparation Checklist</Heading>
+                      <Text fontSize="sm" color="neutral.400">
                         {Object.values(checklist).filter(Boolean).length} / {checklistItems.length} completed
                       </Text>
                     </HStack>
@@ -434,38 +497,39 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                           key={item.id} 
                           p={3} 
                           border="1px" 
-                          borderColor={item.required ? "orange.200" : "gray.200"} 
+                          borderColor={item.required ? "orange.500" : "neutral.700"} 
                           borderRadius="md"
-                          bg={checklist[item.id] ? "green.50" : "white"}
+                          bg={checklist[item.id] ? "rgba(47,212,99,0.1)" : "neutral.700"}
+                          transition="all 0.2s"
                         >
                           <HStack justify="space-between">
                             <HStack spacing={3}>
                               <Checkbox
                                 isChecked={checklist[item.id] || false}
                                 onChange={(e) => setChecklist({...checklist, [item.id]: e.target.checked})}
-                                colorScheme="green"
+                                colorScheme="brand"
                                 size="lg"
                               />
                               <VStack align="start" spacing={0}>
                                 <HStack>
-                                  <Text fontWeight="semibold">{item.label}</Text>
-                                  {item.required && <Badge colorScheme="orange" size="sm">Required</Badge>}
+                                  <Text fontWeight="700" color="neutral.50">{item.label}</Text>
+                                  {item.required && <Badge bg="rgba(237,137,54,0.1)" color="orange.400" border="1px solid" borderColor="orange.500" size="sm">Required</Badge>}
                                 </HStack>
-                                <Text fontSize="xs" color="gray.600" textTransform="capitalize">{item.category}</Text>
+                                <Text fontSize="xs" color="neutral.400" textTransform="capitalize">{item.category}</Text>
                               </VStack>
                             </HStack>
-                            {checklist[item.id] && <Icon as={FiCheck} color="green.500" />}
+                            {checklist[item.id] && <Icon as={FiCheck} color="brand.500" />}
                           </HStack>
                         </Box>
                       ))}
                     </VStack>
                   </Box>
 
-                  <Alert status="info" borderRadius="lg">
-                    <AlertIcon />
+                  <Alert status="info" borderRadius="lg" bg="rgba(66,153,225,0.1)" border="1px solid" borderColor="blue.500">
+                    <AlertIcon color="blue.400" />
                     <Box>
-                      <AlertTitle fontSize="sm">Smart Recommendation</AlertTitle>
-                      <AlertDescription fontSize="sm">
+                      <AlertTitle fontSize="sm" color="neutral.50">Smart Recommendation</AlertTitle>
+                      <AlertDescription fontSize="sm" color="neutral.300">
                         Based on the weather forecast, we recommend bringing extra sunscreen and staying hydrated!
                       </AlertDescription>
                     </Box>
@@ -475,6 +539,9 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                     variant="outline" 
                     leftIcon={<Icon as={FiDownload} />}
                     size="sm"
+                    borderColor="neutral.600"
+                    color="neutral.200"
+                    _hover={{ bg: 'neutral.700', borderColor: 'brand.500', color: 'brand.500' }}
                   >
                     Download Preparation Guide (PDF)
                   </Button>
@@ -486,43 +553,56 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                 <VStack spacing={6} align="stretch">
                   {/* Meeting Point */}
                   <Box>
-                    <Heading size="sm" mb={4}>Meeting Point & Schedule</Heading>
-                    <Box p={4} border="1px" borderColor="gray.200" borderRadius="lg">
+                    <Heading size="sm" mb={4} color="neutral.50" fontWeight="700">Meeting Point & Schedule</Heading>
+                    <Box p={4} border="1px" borderColor="neutral.700" borderRadius="lg" bg="neutral.700">
                       <VStack spacing={4} align="stretch">
                         <HStack spacing={3}>
                           <Icon as={FiMapPin} color="brand.500" boxSize={5} />
                           <VStack align="start" spacing={0}>
-                            <Text fontWeight="semibold">{campaign.location?.address || 'Jumeirah Beach Park Entrance'}</Text>
-                            <Text fontSize="sm" color="gray.600">Near Dubai Marina, Dubai</Text>
-                            <Text fontSize="xs" color="blue.600">GPS: 25.2318, 55.2592</Text>
+                            <Text fontWeight="700" color="neutral.50">{campaign.location?.address || 'Jumeirah Beach Park Entrance'}</Text>
+                            <Text fontSize="sm" color="neutral.300">Near Dubai Marina, Dubai</Text>
+                            <Text fontSize="xs" color="blue.400">GPS: 25.2318, 55.2592</Text>
                           </VStack>
                         </HStack>
                         
-                        <Divider />
+                        <Divider borderColor="neutral.600" />
                         
                         <VStack spacing={2} align="stretch">
-                          <Text fontWeight="semibold" fontSize="sm">Schedule:</Text>
+                          <Text fontWeight="700" fontSize="sm" color="neutral.50">Schedule:</Text>
                           <VStack spacing={1} align="stretch" fontSize="sm">
                             <HStack justify="space-between">
-                              <Text>Check-in & Welcome</Text>
-                              <Text color="gray.600">6:30 - 7:00 AM</Text>
+                              <Text color="neutral.200">Check-in & Welcome</Text>
+                              <Text color="neutral.400">6:30 - 7:00 AM</Text>
                             </HStack>
                             <HStack justify="space-between">
-                              <Text>Safety Briefing</Text>
-                              <Text color="gray.600">7:00 - 7:30 AM</Text>
+                              <Text color="neutral.200">Safety Briefing</Text>
+                              <Text color="neutral.400">7:00 - 7:30 AM</Text>
                             </HStack>
                             <HStack justify="space-between">
-                              <Text>Cleanup Activities</Text>
-                              <Text color="gray.600">7:30 - 11:30 AM</Text>
+                              <Text color="neutral.200">Cleanup Activities</Text>
+                              <Text color="neutral.400">7:30 - 11:30 AM</Text>
                             </HStack>
                             <HStack justify="space-between">
-                              <Text>Wrap-up & Recognition</Text>
-                              <Text color="gray.600">11:30 - 12:00 PM</Text>
+                              <Text color="neutral.200">Wrap-up & Recognition</Text>
+                              <Text color="neutral.400">11:30 - 12:00 PM</Text>
                             </HStack>
                           </VStack>
                         </VStack>
                         
-                        <Button variant="outline" size="sm" leftIcon={<Icon as={FiNavigation} />}>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          leftIcon={<Icon as={FiNavigation} />}
+                          borderColor="neutral.600"
+                          color="neutral.200"
+                          _hover={{ bg: 'neutral.600', borderColor: 'brand.500', color: 'brand.500' }}
+                          onClick={() => {
+                            const coords = parseLocationCoordinates(campaign.location);
+                            const address = campaign.location?.address || 'Campaign Location';
+                            const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${coords.lat},${coords.lon}&destination_place_id=${encodeURIComponent(address)}`;
+                            window.open(mapsUrl, '_blank');
+                          }}
+                        >
                           Get Directions
                         </Button>
                       </VStack>
@@ -531,75 +611,107 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
 
                   {/* Weather Forecast */}
                   <Box>
-                    <Heading size="sm" mb={3}>Weather Forecast</Heading>
+                    <Heading size="sm" mb={3} color="neutral.50" fontWeight="700">Weather Forecast</Heading>
                     {loadingWeather ? (
                       <HStack spacing={3} p={4} justify="center">
-                        <Spinner size="sm" />
-                        <Text fontSize="sm">Loading weather data...</Text>
+                        <Spinner size="sm" color="brand.500" />
+                        <Text fontSize="sm" color="neutral.300">Loading weather data...</Text>
                       </HStack>
-                    ) : (
-                      <Box p={4} border="1px" borderColor="gray.200" borderRadius="lg">
+                    ) : weatherData?.error ? (
+                      <Alert status="error" borderRadius="lg" bg="rgba(245,101,101,0.1)" border="1px solid" borderColor="red.500">
+                        <AlertIcon color="red.400" />
+                        <Box flex={1}>
+                          <AlertTitle fontSize="sm" color="neutral.50">Weather Data Unavailable</AlertTitle>
+                          <AlertDescription fontSize="sm" color="neutral.300">
+                            {weatherData.errorMessage}
+                          </AlertDescription>
+                        </Box>
+                      </Alert>
+                    ) : weatherData ? (
+                      <Box p={4} border="1px" borderColor="neutral.700" borderRadius="lg" bg="neutral.700">
                         <Grid templateColumns="1fr 2fr" gap={4}>
                           <VStack spacing={3}>
-                            <Icon as={weatherData.icon} boxSize={8} color="orange.400" />
+                            <Icon as={weatherData.icon} boxSize={12} color="orange.400" />
                             <VStack spacing={0}>
-                              <Text fontSize="2xl" fontWeight="bold">{weatherData.temperature}°C</Text>
-                              <Text fontSize="sm" color="gray.600">{weatherData.condition}</Text>
+                              <Text fontSize="2xl" fontWeight="700" color="neutral.50">{weatherData.temperature}°C</Text>
+                              <Text fontSize="sm" color="neutral.400" textTransform="capitalize">{weatherData.description || weatherData.condition}</Text>
+                              {weatherData.feelsLike && weatherData.feelsLike !== weatherData.temperature && (
+                                <Text fontSize="xs" color="neutral.500">Feels like {weatherData.feelsLike}°C</Text>
+                              )}
                             </VStack>
                           </VStack>
                           
                           <VStack spacing={2} align="stretch">
                             <HStack justify="space-between">
-                              <HStack spacing={2}>
+                              <HStack spacing={2} color="neutral.400">
                                 <Icon as={FiUmbrella} boxSize={4} />
                                 <Text fontSize="sm">Rain Chance</Text>
                               </HStack>
-                              <Text fontSize="sm" fontWeight="semibold">{weatherData.precipitation}%</Text>
+                              <Text fontSize="sm" fontWeight="700" color="neutral.50">{weatherData.precipitation}%</Text>
                             </HStack>
                             <HStack justify="space-between">
-                              <HStack spacing={2}>
+                              <HStack spacing={2} color="neutral.400">
                                 <Icon as={FiCloud} boxSize={4} />
                                 <Text fontSize="sm">Wind Speed</Text>
                               </HStack>
-                              <Text fontSize="sm" fontWeight="semibold">{weatherData.windSpeed} km/h</Text>
+                              <Text fontSize="sm" fontWeight="700" color="neutral.50">{weatherData.windSpeed} km/h</Text>
                             </HStack>
-                            <Alert status="success" variant="subtle" borderRadius="md" p={2}>
-                              <AlertIcon boxSize={4} />
-                              <Text fontSize="sm">{weatherData.recommendation}</Text>
+                            {weatherData.humidity && (
+                              <HStack justify="space-between">
+                                <HStack spacing={2} color="neutral.400">
+                                  <Text fontSize="sm">💧 Humidity</Text>
+                                </HStack>
+                                <Text fontSize="sm" fontWeight="700" color="neutral.50">{weatherData.humidity}%</Text>
+                              </HStack>
+                            )}
+                            <Alert 
+                              status={weatherData.precipitation > 60 ? "warning" : "success"} 
+                              borderRadius="md" 
+                              p={2} 
+                              bg={weatherData.precipitation > 60 ? "rgba(237,137,54,0.1)" : "rgba(72,187,120,0.1)"} 
+                              border="1px solid" 
+                              borderColor={weatherData.precipitation > 60 ? "orange.500" : "green.500"}
+                            >
+                              <AlertIcon boxSize={4} color={weatherData.precipitation > 60 ? "orange.400" : "green.400"} />
+                              <Text fontSize="sm" color="neutral.300">{weatherData.recommendation}</Text>
                             </Alert>
                           </VStack>
                         </Grid>
+                      </Box>
+                    ) : (
+                      <Box p={4} border="1px" borderColor="neutral.700" borderRadius="lg" bg="neutral.700">
+                        <Text fontSize="sm" color="neutral.400" textAlign="center">Weather data unavailable</Text>
                       </Box>
                     )}
                   </Box>
 
                   {/* Transportation */}
                   <Box>
-                    <Heading size="sm" mb={3}>Transportation Options</Heading>
+                    <Heading size="sm" mb={3} color="neutral.50" fontWeight="700">Transportation Options</Heading>
                     <VStack spacing={3} align="stretch">
-                      <Box p={3} border="1px" borderColor="gray.200" borderRadius="md">
+                      <Box p={3} border="1px" borderColor="neutral.700" borderRadius="md" bg="neutral.700">
                         <HStack justify="space-between">
                           <HStack spacing={3}>
-                            <Icon as={FiTruck} color="green.500" />
+                            <Icon as={FiTruck} color="brand.500" />
                             <VStack align="start" spacing={0}>
-                              <Text fontWeight="semibold" fontSize="sm">Metro & Parking Available</Text>
-                              <Text fontSize="xs" color="gray.600">Dubai Metro Red Line + paid parking</Text>
+                              <Text fontWeight="700" fontSize="sm" color="neutral.50">Metro & Parking Available</Text>
+                              <Text fontSize="xs" color="neutral.400">Dubai Metro Red Line + paid parking</Text>
                             </VStack>
                           </HStack>
-                          <Text fontSize="xs" color="green.600">Recommended</Text>
+                          <Text fontSize="xs" color="brand.500" fontWeight="600">Recommended</Text>
                         </HStack>
                       </Box>
                       
-                      <Box p={3} border="1px" borderColor="gray.200" borderRadius="md">
+                      <Box p={3} border="1px" borderColor="neutral.700" borderRadius="md" bg="neutral.700">
                         <HStack justify="space-between">
                           <HStack spacing={3}>
-                            <Icon as={FiUsers} color="blue.500" />
+                            <Icon as={FiUsers} color="blue.400" />
                             <VStack align="start" spacing={0}>
-                              <Text fontWeight="semibold" fontSize="sm">Carpool Available</Text>
-                              <Text fontSize="xs" color="gray.600">3 volunteers offering rides</Text>
+                              <Text fontWeight="700" fontSize="sm" color="neutral.50">Carpool Available</Text>
+                              <Text fontSize="xs" color="neutral.400">3 volunteers offering rides</Text>
                             </VStack>
                           </HStack>
-                          <Button size="xs" variant="outline">Join</Button>
+                          <Button size="xs" variant="outline" borderColor="neutral.600" color="neutral.200" _hover={{ bg: 'neutral.600', borderColor: 'brand.500', color: 'brand.500' }}>Join</Button>
                         </HStack>
                       </Box>
                     </VStack>
@@ -622,11 +734,11 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                   </Alert>
 
                   <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-                    <Box p={4} border="1px" borderColor="red.200" borderRadius="lg">
+                    <Box p={4} border="1px" borderColor="red.500" borderRadius="lg" bg="rgba(245,101,101,0.1)">
                       <VStack spacing={2}>
-                        <Icon as={FiPhone} color="red.500" boxSize={6} />
-                        <Text fontWeight="semibold" fontSize="sm">Emergency Contacts</Text>
-                        <VStack spacing={1} fontSize="xs">
+                        <Icon as={FiPhone} color="red.400" boxSize={6} />
+                        <Text fontWeight="700" fontSize="sm" color="neutral.50">Emergency Contacts</Text>
+                        <VStack spacing={1} fontSize="xs" color="neutral.300">
                           <Text>Event Organizer: +971 50 123 4567</Text>
                           <Text>Emergency Services: 999</Text>
                           <Text>Dubai Municipality: +971 4 206 5555</Text>
@@ -634,11 +746,11 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                       </VStack>
                     </Box>
                     
-                    <Box p={4} border="1px" borderColor="blue.200" borderRadius="lg">
+                    <Box p={4} border="1px" borderColor="blue.500" borderRadius="lg" bg="rgba(66,153,225,0.1)">
                       <VStack spacing={2}>
-                        <Icon as={FiAlertTriangle} color="blue.500" boxSize={6} />
-                        <Text fontWeight="semibold" fontSize="sm">Safety Guidelines</Text>
-                        <VStack spacing={1} fontSize="xs" align="start">
+                        <Icon as={FiAlertTriangle} color="blue.400" boxSize={6} />
+                        <Text fontWeight="700" fontSize="sm" color="neutral.50">Safety Guidelines</Text>
+                        <VStack spacing={1} fontSize="xs" align="start" color="neutral.300">
                           <Text>• Stay hydrated - drink water every 30 minutes</Text>
                           <Text>• Use proper lifting techniques</Text>
                           <Text>• Report any hazardous materials</Text>
@@ -649,29 +761,29 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                   </Grid>
 
                   <Box>
-                    <Heading size="sm" mb={3}>Health & Accessibility</Heading>
+                    <Heading size="sm" mb={3} color="neutral.50" fontWeight="700">Health & Accessibility</Heading>
                     <VStack spacing={3} align="stretch">
-                      <Alert status="info" borderRadius="md">
-                        <AlertIcon />
-                        <Text fontSize="sm">
+                      <Alert status="info" borderRadius="md" bg="rgba(66,153,225,0.1)" border="1px solid" borderColor="blue.500">
+                        <AlertIcon color="blue.400" />
+                        <Text fontSize="sm" color="neutral.300">
                           This event involves outdoor work on uneven terrain. Please inform organizers of any medical conditions or mobility requirements.
                         </Text>
                       </Alert>
                       
-                      <Box p={3} bg="gray.50" borderRadius="md">
-                        <Text fontSize="sm" fontWeight="semibold" mb={2}>Accessibility Information:</Text>
+                      <Box p={3} bg="neutral.700" borderRadius="md" border="1px solid" borderColor="neutral.600">
+                        <Text fontSize="sm" fontWeight="700" mb={2} color="neutral.50">Accessibility Information:</Text>
                         <VStack spacing={1} align="start" fontSize="sm">
                           <HStack>
-                            <Icon as={FiCheckCircle} color="green.500" boxSize={4} />
-                            <Text>Accessible parking available</Text>
+                            <Icon as={FiCheckCircle} color="brand.500" boxSize={4} />
+                            <Text color="neutral.200">Accessible parking available</Text>
                           </HStack>
                           <HStack>
-                            <Icon as={FiCheckCircle} color="green.500" boxSize={4} />
-                            <Text>Accessible restroom facilities</Text>
+                            <Icon as={FiCheckCircle} color="brand.500" boxSize={4} />
+                            <Text color="neutral.200">Accessible restroom facilities</Text>
                           </HStack>
                           <HStack>
-                            <Icon as={FiAlertTriangle} color="orange.500" boxSize={4} />
-                            <Text>Some areas may not be wheelchair accessible</Text>
+                            <Icon as={FiAlertTriangle} color="orange.400" boxSize={4} />
+                            <Text color="neutral.200">Some areas may not be wheelchair accessible</Text>
                           </HStack>
                         </VStack>
                       </Box>
@@ -686,25 +798,25 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
                   {/* Current Participants */}
                   <Box>
                     <HStack justify="space-between" mb={3}>
-                      <Heading size="sm">Current Participants ({campaign.volunteers?.length || 0})</Heading>
-                      <Button size="sm" variant="ghost">
+                      <Heading size="sm" color="neutral.50" fontWeight="700">Current Participants ({campaign.volunteers?.length || 0})</Heading>
+                      <Button size="sm" variant="ghost" color="neutral.400" _hover={{ bg: 'neutral.700', color: 'brand.500' }}>
                         <Icon as={FiUsers} mr={2} />
                         View All
                       </Button>
                     </HStack>
                     <VStack spacing={3} align="stretch">
                       {(campaign.volunteers || []).slice(0, 4).map((volunteer, i) => (
-                        <HStack key={i} p={3} bg="gray.50" borderRadius="md">
-                          <Avatar size="sm" name={volunteer.name} />
+                        <HStack key={i} p={3} bg="neutral.700" borderRadius="md" border="1px solid" borderColor="neutral.600">
+                          <Avatar size="sm" name={volunteer.name} bg="rgba(47,212,99,0.1)" color="brand.500" border="2px solid" borderColor="brand.500" />
                           <VStack align="start" spacing={0} flex={1}>
-                            <Text fontWeight="semibold" fontSize="sm">{volunteer.name}</Text>
-                            <Text fontSize="xs" color="gray.600">Volunteer • Joined 3 days ago</Text>
+                            <Text fontWeight="700" fontSize="sm" color="neutral.50">{volunteer.name}</Text>
+                            <Text fontSize="xs" color="neutral.400">Volunteer • Joined 3 days ago</Text>
                           </VStack>
-                          <Badge size="sm" colorScheme="green">Active</Badge>
+                          <Badge size="sm" bg="rgba(72,187,120,0.1)" color="green.400" border="1px solid" borderColor="green.500">Active</Badge>
                         </HStack>
                       ))}
                       {(campaign.volunteers || []).length === 0 && (
-                        <Text fontSize="sm" color="gray.500" textAlign="center" py={4}>
+                        <Text fontSize="sm" color="neutral.400" textAlign="center" py={4}>
                           Be the first to join this campaign!
                         </Text>
                       )}
@@ -765,46 +877,52 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
           </Tabs>
         </ModalBody>
 
-        <ModalFooter>
+        <ModalFooter bg="neutral.900" borderTop="1px solid" borderColor="neutral.700">
           <VStack spacing={3} w="full">
             {rsvpConfirmed ? (
-              <Alert status="success" borderRadius="md" w="full">
-                <AlertIcon />
+              <Alert status="success" borderRadius="md" w="full" bg="rgba(72,187,120,0.1)" border="1px solid" borderColor="green.500">
+                <AlertIcon color="green.400" />
                 <Box flex={1}>
-                  <AlertTitle fontSize="sm">You're all set!</AlertTitle>
-                  <AlertDescription fontSize="sm">
+                  <AlertTitle fontSize="sm" color="neutral.50">You're all set!</AlertTitle>
+                  <AlertDescription fontSize="sm" color="neutral.300">
                     Event details sent to your email. See you there! 🌱
                   </AlertDescription>
                 </Box>
               </Alert>
             ) : (
-              <Alert status="info" borderRadius="md" w="full">
-                <AlertIcon />
-                <Text fontSize="sm">
+              <Alert status="info" borderRadius="md" w="full" bg="rgba(66,153,225,0.1)" border="1px solid" borderColor="blue.500">
+                <AlertIcon color="blue.400" />
+                <Text fontSize="sm" color="neutral.300">
                   Complete your RSVP to join this campaign and start earning EcoPoints!
                 </Text>
               </Alert>
             )}
             
             <HStack spacing={3} w="full">
-              <Button variant="ghost" onClick={onClose}>
+              <Button variant="ghost" onClick={onClose} color="neutral.400" _hover={{ bg: 'neutral.700', color: 'neutral.50' }}>
                 {rsvpConfirmed ? 'Close' : 'Cancel'}
               </Button>
               
               {!rsvpConfirmed ? (
                 <Button 
-                  colorScheme="brand" 
+                  bg="brand.500"
+                  color="neutral.900"
                   flex={1}
                   onClick={handleRSVP}
                   leftIcon={<Icon as={FiCheckCircle} />}
+                  _hover={{ bg: 'brand.600', boxShadow: '0 0 15px rgba(47,212,99,0.5)' }}
+                  fontWeight="700"
                 >
                   Complete RSVP
                 </Button>
               ) : (
                 <Button 
-                  colorScheme="green" 
+                  bg="brand.500"
+                  color="neutral.900"
                   flex={1}
                   leftIcon={<Icon as={FiCalendar} />}
+                  _hover={{ bg: 'brand.600', boxShadow: '0 0 15px rgba(47,212,99,0.5)' }}
+                  fontWeight="700"
                 >
                   Add to Calendar
                 </Button>
@@ -813,6 +931,9 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
               <Button 
                 variant="outline"
                 leftIcon={<Icon as={FiShare2} />}
+                borderColor="neutral.600"
+                color="neutral.200"
+                _hover={{ bg: 'neutral.700', borderColor: 'brand.500', color: 'brand.500' }}
               >
                 Share
               </Button>

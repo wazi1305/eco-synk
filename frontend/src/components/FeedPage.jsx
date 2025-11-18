@@ -191,7 +191,7 @@ const buildCampaignActivity = (campaign) => {
     timestampValue,
     duration: campaign.timeline?.durationDays ? `${campaign.timeline.durationDays} days` : 'Scheduled',
     stats,
-    images: [campaign.image || '♻️'],
+    images: [campaign.heroImage || campaign.image || '♻️'],
     tags: campaign.hotspot?.materials || [],
     likes: stats.volunteers,
     comments: Math.max(2, Math.round(stats.points / 5)),
@@ -500,7 +500,18 @@ const FeedPage = () => {
   };
 
   const ActivityCard = ({ activity }) => (
-    <Card variant="outline" _hover={{ shadow: 'md' }} transition="all 0.2s" mb={{ base: 3, md: 4 }}>
+    <Card 
+      bg="neutral.800" 
+      border="1px solid" 
+      borderColor="neutral.700" 
+      borderRadius="12px"
+      _hover={{ 
+        shadow: '0 0 20px rgba(47, 212, 99, 0.2)', 
+        borderColor: 'brand.500'
+      }} 
+      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" 
+      mb={{ base: 3, md: 4 }}
+    >
       <CardBody p={0}>
         {/* Activity Header */}
         <HStack spacing={{ base: 2, md: 3 }} p={{ base: 3, md: 4 }} pb={3}>
@@ -508,28 +519,39 @@ const FeedPage = () => {
             size={{ base: 'sm', md: 'md' }} 
             name={activity.user.name}
             cursor="pointer"
-            _hover={{ ring: 2, ringColor: 'brand.500' }}
+            bg="rgba(47, 212, 99, 0.1)"
+            border="2px solid"
+            borderColor="brand.500"
+            color="brand.500"
+            _hover={{ transform: 'scale(1.05)' }}
             onClick={() => openProfile(activity.user)}
           />
           <VStack align="start" spacing={0} flex={1}>
             <HStack spacing={2} flexWrap="wrap">
               <Text 
-                fontWeight="semibold"
+                fontWeight="600"
                 fontSize={{ base: 'sm', md: 'md' }}
                 cursor="pointer"
-                _hover={{ color: 'brand.600' }}
+                color="neutral.50"
+                _hover={{ color: 'brand.500' }}
                 onClick={() => openProfile(activity.user)}
               >
                 {activity.user.name}
               </Text>
               {activity.user.verified && (
-                <Icon as={FiAward} color="blue.500" boxSize={4} />
+                <Icon as={FiAward} color="blue.400" boxSize={4} />
               )}
-              <Badge colorScheme={getActivityColor(activity.type)} variant="subtle" size="sm">
+              <Badge 
+                bg="rgba(47, 212, 99, 0.1)" 
+                color="brand.500" 
+                border="1px solid" 
+                borderColor="brand.500"
+                size="sm"
+              >
                 {activity.user.title}
               </Badge>
             </HStack>
-            <HStack spacing={2} fontSize="sm" color="gray.600">
+            <HStack spacing={2} fontSize="sm" color="neutral.400">
               <Icon as={getActivityIcon(activity.type)} boxSize={4} />
               <Text>{activity.timestamp}</Text>
               <Text>•</Text>
@@ -540,19 +562,26 @@ const FeedPage = () => {
             </HStack>
           </VStack>
           <Menu>
-            <MenuButton as={IconButton} icon={<FiMoreVertical />} variant="ghost" size="sm" />
-            <MenuList>
-              <MenuItem icon={<FiBell />}>Get notifications</MenuItem>
-              <MenuItem icon={<FiFlag />}>Report post</MenuItem>
-              <MenuItem icon={<FiShare2 />}>Share activity</MenuItem>
+            <MenuButton 
+              as={IconButton} 
+              icon={<FiMoreVertical />} 
+              variant="ghost" 
+              size="sm" 
+              color="neutral.400"
+              _hover={{ bg: 'neutral.700', color: 'neutral.50' }}
+            />
+            <MenuList bg="neutral.800" borderColor="neutral.700">
+              <MenuItem icon={<FiBell />} bg="neutral.800" color="neutral.200" _hover={{ bg: 'neutral.700' }}>Get notifications</MenuItem>
+              <MenuItem icon={<FiFlag />} bg="neutral.800" color="neutral.200" _hover={{ bg: 'neutral.700' }}>Report post</MenuItem>
+              <MenuItem icon={<FiShare2 />} bg="neutral.800" color="neutral.200" _hover={{ bg: 'neutral.700' }}>Share activity</MenuItem>
             </MenuList>
           </Menu>
         </HStack>
 
         {/* Activity Content */}
         <Box px={{ base: 3, md: 4 }} pb={3}>
-          <Heading size={{ base: 'sm', md: 'md' }} mb={2}>{activity.title}</Heading>
-          <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.700" mb={3}>{activity.description}</Text>
+          <Heading size={{ base: 'sm', md: 'md' }} mb={2} color="neutral.50" fontWeight="700">{activity.title}</Heading>
+          <Text fontSize={{ base: 'sm', md: 'md' }} color="neutral.300" mb={3}>{activity.description}</Text>
           
           {/* Activity Images */}
           {activity.images && (
@@ -562,13 +591,15 @@ const FeedPage = () => {
                   key={index}
                   fontSize="2xl"
                   p={2}
-                  bg="gray.100"
-                  borderRadius="lg"
+                  bg="neutral.700"
+                  borderRadius="8px"
                   w="60px"
                   h="60px"
                   display="flex"
                   alignItems="center"
                   justifyContent="center"
+                  border="1px solid"
+                  borderColor="neutral.600"
                 >
                   {image}
                 </Box>
@@ -585,10 +616,10 @@ const FeedPage = () => {
                 .map(([label, value]) => (
                   <GridItem key={label}>
                     <Stat>
-                      <StatLabel textTransform="capitalize" color="gray.500">
+                      <StatLabel textTransform="capitalize" color="neutral.400" fontSize="xs">
                         {label}
                       </StatLabel>
-                      <StatNumber fontSize="lg">{value}</StatNumber>
+                      <StatNumber fontSize="lg" color="neutral.50" fontWeight="700">{value}</StatNumber>
                     </Stat>
                   </GridItem>
                 ))}
@@ -596,23 +627,23 @@ const FeedPage = () => {
           )}
 
           {/* Weather & Duration */}
-          <HStack justify="space-between" fontSize="sm" color="gray.600" mb={3}>
+          <HStack justify="space-between" fontSize="sm" color="neutral.400" mb={3}>
             <HStack spacing={4}>
               {activity.weather && (
                 <HStack spacing={1}>
                   <Text>☀️</Text>
-                  <Text>{activity.weather.temp}</Text>
+                  <Text color="neutral.300">{activity.weather.temp}</Text>
                 </HStack>
               )}
               <HStack spacing={1}>
                 <Icon as={FiClock} boxSize={3} />
-                <Text>{activity.duration}</Text>
+                <Text color="neutral.300">{activity.duration}</Text>
               </HStack>
             </HStack>
             {activity.achievements && (
               <HStack spacing={1}>
-                <Icon as={FiAward} boxSize={3} color="yellow.500" />
-                <Text fontSize="xs">+{activity.achievements.length} achievements</Text>
+                <Icon as={FiAward} boxSize={3} color="yellow.400" />
+                <Text fontSize="xs" color="neutral.300">+{activity.achievements.length} achievements</Text>
               </HStack>
             )}
           </HStack>
@@ -621,7 +652,14 @@ const FeedPage = () => {
           {activity.tags && (
             <HStack spacing={2} mb={3} flexWrap="wrap">
               {activity.tags.map((tag, index) => (
-                <Badge key={`${tag}-${index}`} variant="outline" colorScheme="gray" size="sm">
+                <Badge 
+                  key={`${tag}-${index}`} 
+                  bg="neutral.700" 
+                  color="neutral.300" 
+                  border="1px solid" 
+                  borderColor="neutral.600"
+                  size="sm"
+                >
                   #{tag}
                 </Badge>
               ))}
@@ -629,7 +667,7 @@ const FeedPage = () => {
           )}
         </Box>
 
-        <Divider />
+        <Divider borderColor="neutral.700" />
 
         {/* Action Buttons */}
         <HStack spacing={0} p={{ base: 2, md: 3 }}>
@@ -639,15 +677,32 @@ const FeedPage = () => {
             size={{ base: 'sm', md: 'md' }}
             flex={1}
             minH={{ base: '44px', md: 'auto' }}
-            color={likedPosts.has(activity.id) ? 'red.500' : 'gray.600'}
+            color={likedPosts.has(activity.id) ? 'red.500' : 'neutral.400'}
+            _hover={{ bg: 'neutral.700', color: likedPosts.has(activity.id) ? 'red.400' : 'brand.500' }}
             onClick={() => toggleLike(activity.id)}
           >
             {activity.likes + (likedPosts.has(activity.id) ? 1 : 0)}
           </Button>
-          <Button leftIcon={<FiMessageCircle />} variant="ghost" size={{ base: 'sm', md: 'md' }} flex={1} minH={{ base: '44px', md: 'auto' }} color="gray.600">
+          <Button 
+            leftIcon={<FiMessageCircle />} 
+            variant="ghost" 
+            size={{ base: 'sm', md: 'md' }} 
+            flex={1} 
+            minH={{ base: '44px', md: 'auto' }} 
+            color="neutral.400"
+            _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+          >
             {activity.comments}
           </Button>
-          <Button leftIcon={<FiShare2 />} variant="ghost" size={{ base: 'sm', md: 'md' }} flex={1} minH={{ base: '44px', md: 'auto' }} color="gray.600">
+          <Button 
+            leftIcon={<FiShare2 />} 
+            variant="ghost" 
+            size={{ base: 'sm', md: 'md' }} 
+            flex={1} 
+            minH={{ base: '44px', md: 'auto' }} 
+            color="neutral.400"
+            _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+          >
             Share
           </Button>
         </HStack>
@@ -656,7 +711,7 @@ const FeedPage = () => {
   );
 
   return (
-    <Box bg="gray.50" minH="100vh" position="relative">
+    <Box bg="neutral.900" minH="100vh" position="relative">
       {/* Enhanced Header with Transform */}
       <Box
         position="fixed"
@@ -664,9 +719,10 @@ const FeedPage = () => {
         left={0}
         right={0}
         zIndex={10}
-        bg="white"
+        bg="rgba(2, 2, 2, 0.95)"
+        backdropFilter="blur(20px)"
         borderBottomWidth={1}
-        borderColor="gray.200"
+        borderColor="neutral.700"
         transform={showHeader ? 'translateY(0)' : 'translateY(-100%)'}
         transition="transform 0.3s ease-in-out"
       >
@@ -674,14 +730,37 @@ const FeedPage = () => {
           {/* Main Header */}
           <HStack justify="space-between" p={{ base: 3, md: 4 }} pb={0} w="full" maxW="800px" mx="auto">
             <VStack align="start" spacing={1}>
-              <Heading size="lg" color="brand.600">Feed</Heading>
-              <Text fontSize="sm" color="gray.600">
+              <Heading size="lg" color="brand.500" fontWeight="700">Feed</Heading>
+              <Text fontSize="sm" color="neutral.400">
                 {todayImpact.activities} activities today
               </Text>
             </VStack>
             <HStack spacing={2}>
+
+              <IconButton 
+                icon={<FiSearch />} 
+                variant="ghost" 
+                size="sm" 
+                color="neutral.400"
+                _hover={{ bg: 'rgba(47, 212, 99, 0.1)', color: 'brand.500' }}
+              />
+              <IconButton 
+                icon={<FiFilter />} 
+                variant="ghost" 
+                size="sm"
+                color="neutral.400"
+                _hover={{ bg: 'rgba(47, 212, 99, 0.1)', color: 'brand.500' }}
+              />
+              <IconButton 
+                icon={<FiPlus />} 
+                variant="ghost" 
+                size="sm" 
+                color="brand.500"
+                _hover={{ bg: 'rgba(47, 212, 99, 0.1)' }}
+              />
               <IconButton icon={<FiSearch />} variant="ghost" size="sm" />
               <IconButton icon={<FiFilter />} variant="ghost" size="sm" />
+
               <IconButton
                 icon={<FiRefreshCw />}
                 variant="ghost"
@@ -689,6 +768,8 @@ const FeedPage = () => {
                 aria-label="Refresh feed"
                 onClick={handleRefresh}
                 isLoading={isRefreshing}
+                color="neutral.400"
+                _hover={{ bg: 'rgba(47, 212, 99, 0.1)', color: 'brand.500' }}
               />
               {isAuthenticated ? (
                 <Menu>
@@ -710,24 +791,24 @@ const FeedPage = () => {
           </HStack>
 
           {/* Today's Impact Bar */}
-          <Box w="full" bg="gradient.primary" px={{ base: 2, md: 4 }} py={1}>
+          <Box w="full" bgGradient="linear(to-r, rgba(47, 212, 99, 0.1), rgba(47, 212, 99, 0.05))" px={{ base: 2, md: 4 }} py={2} borderY="1px solid" borderColor="rgba(47, 212, 99, 0.2)">
             <Box maxW="800px" mx="auto">
-              <HStack justify="space-around" color="white" fontSize={{ base: 'xs', md: 'sm' }} spacing={{ base: 1, md: 4 }}>
+              <HStack justify="space-around" fontSize={{ base: 'xs', md: 'sm' }} spacing={{ base: 1, md: 4 }}>
                 <VStack spacing={0}>
-                  <Text fontWeight="bold">{todayImpact.participants}</Text>
-                  <Text opacity={0.9}>Active</Text>
+                  <Text fontWeight="700" color="neutral.50">{todayImpact.participants}</Text>
+                  <Text color="neutral.400" fontSize="xs">Active</Text>
                 </VStack>
                 <VStack spacing={0}>
-                  <Text fontWeight="bold">{todayImpact.itemsCollected}</Text>
-                  <Text opacity={0.9}>Items</Text>
+                  <Text fontWeight="700" color="neutral.50">{todayImpact.itemsCollected}</Text>
+                  <Text color="neutral.400" fontSize="xs">Items</Text>
                 </VStack>
                 <VStack spacing={0}>
-                  <Text fontWeight="bold">{todayImpact.co2Saved}kg</Text>
-                  <Text opacity={0.9}>CO₂ Saved</Text>
+                  <Text fontWeight="700" color="neutral.50">{todayImpact.co2Saved}kg</Text>
+                  <Text color="neutral.400" fontSize="xs">CO₂ Saved</Text>
                 </VStack>
                 <VStack spacing={0}>
-                  <Text fontWeight="bold">{todayImpact.locationsCleared}</Text>
-                  <Text opacity={0.9}>Locations</Text>
+                  <Text fontWeight="700" color="neutral.50">{todayImpact.locationsCleared}</Text>
+                  <Text color="neutral.400" fontSize="xs">Locations</Text>
                 </VStack>
               </HStack>
             </Box>
@@ -735,12 +816,40 @@ const FeedPage = () => {
 
           {/* Feed Tabs */}
           <Box w="full" maxW="800px" mx="auto" px={{ base: 2, md: 4 }}>
-            <Tabs index={activeTab} onChange={setActiveTab} variant="enclosed-colored" size={{ base: 'sm', md: 'md' }}>
-              <TabList>
-                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Following</Tab>
-                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Local</Tab>
-                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Trending</Tab>
-                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Challenges</Tab>
+            <Tabs index={activeTab} onChange={setActiveTab} size={{ base: 'sm', md: 'md' }}>
+              <TabList borderBottomColor="neutral.700">
+                <Tab 
+                  flex={1} 
+                  fontSize={{ base: 'xs', md: 'sm' }}
+                  color="neutral.400"
+                  _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+                >
+                  Following
+                </Tab>
+                <Tab 
+                  flex={1} 
+                  fontSize={{ base: 'xs', md: 'sm' }}
+                  color="neutral.400"
+                  _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+                >
+                  Local
+                </Tab>
+                <Tab 
+                  flex={1} 
+                  fontSize={{ base: 'xs', md: 'sm' }}
+                  color="neutral.400"
+                  _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+                >
+                  Trending
+                </Tab>
+                <Tab 
+                  flex={1} 
+                  fontSize={{ base: 'xs', md: 'sm' }}
+                  color="neutral.400"
+                  _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+                >
+                  Challenges
+                </Tab>
               </TabList>
             </Tabs>
 
@@ -763,23 +872,101 @@ const FeedPage = () => {
           {(error || warning) && (
             <Box w="full">
               {error && (
-                <Alert status="error" borderRadius="lg" mb={warning ? 3 : 0}>
-                  <AlertIcon />
-                  {error}
+                <Alert 
+                  status="error" 
+                  borderRadius="12px" 
+                  mb={warning ? 3 : 0}
+                  bg="rgba(245, 101, 101, 0.1)"
+                  border="1px solid"
+                  borderColor="red.500"
+                >
+                  <AlertIcon color="red.400" />
+                  <Text color="neutral.200">{error}</Text>
                 </Alert>
               )}
               {!error && warning && (
-                <Alert status="warning" borderRadius="lg">
-                  <AlertIcon />
-                  {warning}
+                <Alert 
+                  status="warning" 
+                  borderRadius="12px"
+                  bg="rgba(237, 137, 54, 0.1)"
+                  border="1px solid"
+                  borderColor="orange.500"
+                >
+                  <AlertIcon color="orange.400" />
+                  <Text color="neutral.200">{warning}</Text>
                 </Alert>
               )}
             </Box>
           )}
 
           {/* Create Post Section */}
-          <Card w="full" variant="outline">
+          <Card 
+            w="full" 
+            bg="neutral.800" 
+            border="1px solid" 
+            borderColor="neutral.700"
+            borderRadius="12px"
+          >
             <CardBody>
+
+              <HStack spacing={3} mb={3}>
+                <Avatar 
+                  size="sm" 
+                  name="Current User" 
+                  bg="rgba(47, 212, 99, 0.1)"
+                  border="2px solid"
+                  borderColor="brand.500"
+                  color="brand.500"
+                />
+                <Textarea
+                  placeholder="Share your eco-impact..."
+                  value={newPost}
+                  onChange={(e) => setNewPost(e.target.value)}
+                  resize="none"
+                  minH="unset"
+                  rows={2}
+                  bg="neutral.700"
+                  border="1px solid"
+                  borderColor="neutral.600"
+                  color="neutral.50"
+                  _placeholder={{ color: 'neutral.400' }}
+                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
+                />
+              </HStack>
+              <HStack justify="space-between">
+                <HStack spacing={2}>
+                  <IconButton 
+                    icon={<FiCamera />} 
+                    variant="ghost" 
+                    size="sm" 
+                    color="neutral.400"
+                    _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+                  />
+                  <IconButton 
+                    icon={<FiMapPin />} 
+                    variant="ghost" 
+                    size="sm"
+                    color="neutral.400"
+                    _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+                  />
+                  <IconButton 
+                    icon={<FiUsers />} 
+                    variant="ghost" 
+                    size="sm"
+                    color="neutral.400"
+                    _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+                  />
+                </HStack>
+                <Button 
+                  size="sm" 
+                  bg="brand.500"
+                  color="neutral.900"
+                  _hover={{ bg: 'brand.600' }}
+                  isDisabled={!newPost.trim()}
+                >
+                  Post
+                </Button>
+              </HStack>
               {isAuthenticated ? (
                 <>
                   <HStack spacing={3} mb={3}>
@@ -819,22 +1006,34 @@ const FeedPage = () => {
 
           {/* Activities Feed */}
           {isLoading ? (
-            <Card w="full" variant="outline">
+            <Card 
+              w="full" 
+              bg="neutral.800" 
+              border="1px solid" 
+              borderColor="neutral.700"
+              borderRadius="12px"
+            >
               <CardBody>
                 <VStack spacing={3} py={6}>
                   <Spinner color="brand.500" />
-                  <Text color="gray.600">Loading live activities...</Text>
+                  <Text color="neutral.400">Loading live activities...</Text>
                 </VStack>
               </CardBody>
             </Card>
           ) : activities.length ? (
             activities.map((activity) => <ActivityCard key={activity.id} activity={activity} />)
           ) : (
-            <Card w="full" variant="outline">
+            <Card 
+              w="full" 
+              bg="neutral.800" 
+              border="1px solid" 
+              borderColor="neutral.700"
+              borderRadius="12px"
+            >
               <CardBody>
                 <VStack spacing={2} py={4}>
-                  <Text fontWeight="semibold">No activities yet</Text>
-                  <Text fontSize="sm" color="gray.600">
+                  <Text fontWeight="600" color="neutral.50">No activities yet</Text>
+                  <Text fontSize="sm" color="neutral.400">
                     Try refreshing or adjusting filters to see more updates.
                   </Text>
                 </VStack>

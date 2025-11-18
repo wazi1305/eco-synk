@@ -96,16 +96,24 @@ const UserProfileModal = ({ isOpen, onClose, userData }) => {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="4xl" scrollBehavior="inside">
-      <ModalOverlay bg="blackAlpha.600" />
-      <ModalContent maxH="90vh">
-        <ModalHeader pb={0}>
+      <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
+      <ModalContent maxH="90vh" bg="neutral.800" borderColor="neutral.700" border="1px solid">
+        <ModalHeader pb={0} bg="neutral.900" borderTopRadius="md">
           <VStack spacing={4} align="center" py={4}>
             {/* Profile Header */}
-            <Avatar size="2xl" name={userData.name} src={userData.avatar} />
+            <Avatar 
+              size="2xl" 
+              name={userData.name} 
+              src={userData.avatar}
+              bg="rgba(47, 212, 99, 0.1)"
+              border="3px solid"
+              borderColor="brand.500"
+              color="brand.500"
+            />
             <VStack spacing={2} textAlign="center">
-              <Heading size="lg" color="gray.900">{userData.name}</Heading>
-              <Text color="gray.600" fontSize="md">@{userData.username}</Text>
-              <HStack spacing={4} color="gray.500">
+              <Heading size="lg" color="neutral.50" fontWeight="700">{userData.name}</Heading>
+              <Text color="neutral.400" fontSize="md">@{userData.username}</Text>
+              <HStack spacing={4} color="neutral.400">
                 <HStack spacing={1}>
                   <Icon as={FiMapPin} boxSize={4} />
                   <Text fontSize="sm">{userData.location}</Text>
@@ -120,49 +128,86 @@ const UserProfileModal = ({ isOpen, onClose, userData }) => {
             {/* Stats Row */}
             <Grid templateColumns="repeat(4, 1fr)" gap={6} w="full" maxW="500px">
               <Stat textAlign="center">
-                <StatNumber fontSize="xl" color="brand.600">{userData.totalPoints}</StatNumber>
-                <StatLabel fontSize="xs" color="gray.500">Points</StatLabel>
+                <StatNumber fontSize="xl" color="brand.500" fontWeight="700">{userData.totalPoints}</StatNumber>
+                <StatLabel fontSize="xs" color="neutral.400">Points</StatLabel>
               </Stat>
               <Stat textAlign="center">
-                <StatNumber fontSize="xl" color="green.600">{userData.totalActivities}</StatNumber>
-                <StatLabel fontSize="xs" color="gray.500">Activities</StatLabel>
+                <StatNumber fontSize="xl" color="green.400" fontWeight="700">{userData.totalActivities}</StatNumber>
+                <StatLabel fontSize="xs" color="neutral.400">Activities</StatLabel>
               </Stat>
               <Stat textAlign="center">
-                <StatNumber fontSize="xl" color="purple.600">{userData.rank}</StatNumber>
-                <StatLabel fontSize="xs" color="gray.500">Global Rank</StatLabel>
+                <StatNumber fontSize="xl" color="purple.400" fontWeight="700">{userData.rank}</StatNumber>
+                <StatLabel fontSize="xs" color="neutral.400">Global Rank</StatLabel>
               </Stat>
               <Stat textAlign="center">
-                <StatNumber fontSize="xl" color="orange.600">{userData.streak}</StatNumber>
-                <StatLabel fontSize="xs" color="gray.500">Day Streak</StatLabel>
+                <StatNumber fontSize="xl" color="orange.400" fontWeight="700">{userData.streak}</StatNumber>
+                <StatLabel fontSize="xs" color="neutral.400">Day Streak</StatLabel>
               </Stat>
             </Grid>
 
             {/* Action Buttons */}
             <HStack spacing={3}>
-              <Button colorScheme="brand" size="sm">
+              <Button 
+                bg="brand.500" 
+                color="neutral.900" 
+                size="sm"
+                _hover={{ bg: 'brand.600' }}
+              >
                 <Icon as={FiUsers} mr={2} />
                 Follow
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                borderColor="neutral.700"
+                color="neutral.200"
+                _hover={{ bg: 'neutral.700', borderColor: 'brand.500', color: 'brand.500' }}
+              >
                 <Icon as={FiHeart} mr={2} />
                 Kudos
               </Button>
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                borderColor="neutral.700"
+                color="neutral.200"
+                _hover={{ bg: 'neutral.700', borderColor: 'brand.500', color: 'brand.500' }}
+              >
                 <Icon as={FiCamera} mr={2} />
                 Share
               </Button>
             </HStack>
           </VStack>
         </ModalHeader>
-        <ModalCloseButton />
+        <ModalCloseButton color="neutral.400" _hover={{ bg: 'neutral.700', color: 'neutral.50' }} />
         
         <ModalBody>
-          <Tabs index={activeTab} onChange={setActiveTab} variant="enclosed">
-            <TabList>
-              <Tab>Recent Activity</Tab>
-              <Tab>Achievements</Tab>
-              <Tab>Statistics</Tab>
-              <Tab>Following</Tab>
+          <Tabs index={activeTab} onChange={setActiveTab}>
+            <TabList borderBottomColor="neutral.700">
+              <Tab 
+                color="neutral.400" 
+                _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+              >
+                Recent Activity
+              </Tab>
+              <Tab 
+                color="neutral.400" 
+                _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+              >
+                Achievements
+              </Tab>
+              <Tab 
+                color="neutral.400" 
+                _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+              >
+                Statistics
+              </Tab>
+              <Tab 
+                color="neutral.400" 
+                _selected={{ color: 'brand.500', borderColor: 'brand.500' }}
+              >
+                Following
+              </Tab>
             </TabList>
 
             <TabPanels>
@@ -170,28 +215,36 @@ const UserProfileModal = ({ isOpen, onClose, userData }) => {
               <TabPanel p={0} pt={4}>
                 <VStack spacing={4} align="stretch">
                   {recentActivities.map((activity) => (
-                    <Card key={activity.id} variant="outline">
+                    <Card 
+                      key={activity.id} 
+                      bg="neutral.700" 
+                      border="1px solid" 
+                      borderColor="neutral.600"
+                      borderRadius="12px"
+                    >
                       <CardBody p={4}>
                         <HStack spacing={4}>
                           <Box 
                             fontSize="2xl" 
                             p={2} 
-                            bg="gray.100" 
-                            borderRadius="lg"
+                            bg="neutral.600" 
+                            borderRadius="8px"
+                            border="1px solid"
+                            borderColor="neutral.500"
                           >
                             {activity.image}
                           </Box>
                           <VStack align="start" spacing={1} flex={1}>
                             <HStack spacing={2}>
-                              <Text fontWeight="semibold" textTransform="capitalize">
+                              <Text fontWeight="600" textTransform="capitalize" color="neutral.50">
                                 {activity.type}
                               </Text>
-                              <Text color="gray.600">at</Text>
-                              <Text color="brand.600" fontWeight="medium">
+                              <Text color="neutral.400">at</Text>
+                              <Text color="brand.500" fontWeight="600">
                                 {activity.location}
                               </Text>
                             </HStack>
-                            <Text fontSize="sm" color="gray.500">
+                            <Text fontSize="sm" color="neutral.400">
                               {activity.date}
                             </Text>
                             <HStack spacing={4} fontSize="sm">

@@ -54,15 +54,23 @@ export const sortByDistance = (campaigns, userLocation) => {
   if (!userLocation) return campaigns;
   
   return campaigns
-    .map(campaign => ({
-      ...campaign,
-      distance: calculateDistance(
-        userLocation.lat, 
-        userLocation.lng,
-        campaign.location.lat,
-        campaign.location.lng
-      )
-    }))
+    .map(campaign => {
+      const { lat, lng } = campaign.location || {};
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        return { ...campaign, distance: Number.POSITIVE_INFINITY };
+      }
+
+      return {
+        ...campaign,
+        distance: calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          lat,
+          lng
+        )
+      };
+    })
+    .filter(campaign => Number.isFinite(campaign.distance))
     .sort((a, b) => a.distance - b.distance);
 };
 

@@ -28,7 +28,16 @@ from embeddings.generator import EmbeddingGenerator
 from yolo.waste_detector import WasteDetector
 from geocoding import reverse_geocode
 from campaigns import CampaignManager
+
+from image_generation import (
+    CampaignBannerGenerator,
+    BannerResult,
+    build_banner_prompt,
+    build_negative_prompt,
+)
+from geocoding import reverse_geocode
 from user_service import UserService
+
 
 
 # ============================================================================
@@ -134,6 +143,7 @@ vector_store: Optional[EcoSynkVectorStore] = None
 embedder: Optional[EmbeddingGenerator] = None
 waste_detector: Optional[WasteDetector] = None
 campaign_manager: Optional[CampaignManager] = None
+banner_generator: Optional[CampaignBannerGenerator] = None
 user_service: Optional[UserService] = None
 
 
@@ -237,7 +247,8 @@ def _enrich_location(raw_location: Optional[Dict[str, Any]]) -> Optional[Dict[st
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-
+    global analyzer, vector_store, embedder, waste_detector
+    global analyzer, vector_store, embedder, campaign_manager, banner_generator
     global analyzer, vector_store, embedder, waste_detector, campaign_manager, user_service
 
     
@@ -317,6 +328,21 @@ async def startup_event():
         print(f"  ⚠️  Campaign Manager failed: {e}")
         campaign_manager = None
 
+    # Imagen banner generator
+    try:
+        if settings.google_api_key:
+            print("  → Initializing campaign banner generator...")
+            banner_generator = CampaignBannerGenerator(
+                api_key=settings.google_api_key,
+                model_name=settings.google_imagen_model,
+            )
+            print("  ✅ Banner generator ready")
+        else:
+            print("  ⚠️  GOOGLE_API_KEY not set. Campaign banner generation disabled")
+            banner_generator = None
+    except Exception as e:
+        print(f"  ⚠️  Banner generator failed: {e}")
+        banner_generator = None
     # User Service
     try:
         print("  → Initializing User Service...")
@@ -360,6 +386,83 @@ async def root():
             "create_campaign": "POST /campaigns"
         }
     }
+
+
+async def _maybe_generate_campaign_banner(
+    *,
+    name: str,
+    description: str,
+    materials: Optional[List[str]],
+    location_label: Optional[str],
+) -> Optional[BannerResult]:
+    """Generate a banner using the configured Imagen model if available."""
+
+    if not banner_generator:
+        return None
+
+    material_text: Optional[str] = None
+    if materials:
+        cleaned = [str(item).strip() for item in materials if str(item).strip()]
+        if cleaned:
+            material_text = ", ".join(cleaned)
+
+    prompt = build_banner_prompt(
+        campaign_name=name,
+        description=description,
+        focus_materials=material_text,
+        setting=location_label,
+    )
+
+    try:
+        result = await banner_generator.generate_banner(
+            prompt,
+            negative_prompt=build_negative_prompt(),
+        )
+        return result
+    except Exception as exc:
+        print(f"⚠️  Banner generation failed: {exc}")
+        return None
+
+
+@app.get("/geocode/reverse")
+async def geocode_reverse(
+    lat: float = Query(..., description="Latitude to reverse geocode"),
+    lon: float = Query(..., description="Longitude to reverse geocode"),
+    include_raw: bool = Query(False, description="Include raw provider payload"),
+):
+    """Reverse geocode latitude/longitude into a human readable label."""
+    try:
+        rounded_lat = round(float(lat), 6)
+        rounded_lon = round(float(lon), 6)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid latitude or longitude") from exc
+
+    context = reverse_geocode(rounded_lat, rounded_lon)
+
+    if not context:
+        return {
+            "lat": rounded_lat,
+            "lon": rounded_lon,
+            "label": None,
+            "address": None,
+            "display_name": None,
+            "context": None,
+        }
+
+    label = context.get("name") or context.get("display_name")
+    response_payload = {
+        "lat": rounded_lat,
+        "lon": rounded_lon,
+        "label": label,
+        "address": context.get("address"),
+        "display_name": context.get("display_name"),
+        "source": context.get("source", "openstreetmap"),
+    }
+
+    if include_raw:
+        response_payload["context"] = context
+
+    return response_payload
 
 
 @app.get("/health")
@@ -1986,12 +2089,28 @@ async def create_campaign_frontend(campaign_data: Dict[str, Any] = Body(...), cu
         # Extract data from frontend format
         campaign_name = campaign_data.get('campaign_name', 'New Campaign')
         location = campaign_data.get('location', {})
+        location_label = (
+            campaign_data.get('location_label')
+            or location.get('address')
+            or location.get('label')
+        )
         target_funding_usd = campaign_data.get('target_funding_usd', 500)
         volunteer_goal = campaign_data.get('volunteer_goal', 10)
         duration_days = campaign_data.get('duration_days', 30)
         estimated_waste_kg = campaign_data.get('estimated_waste_kg', 50)
-        materials = campaign_data.get('materials', 'mixed')
+        raw_materials = campaign_data.get('materials')
+        if not raw_materials:
+            raw_materials = campaign_data.get('hotspot', {}).get('materials')
+        if isinstance(raw_materials, str):
+            materials_list = [raw_materials]
+        elif isinstance(raw_materials, list):
+            materials_list = raw_materials
+        else:
+            materials_list = ['mixed']
         description = campaign_data.get('description', '')
+
+        if embedder is None or vector_store is None:
+            raise HTTPException(status_code=503, detail="Campaign services unavailable")
         
         # Generate campaign ID
         campaign_id = f"campaign_{int(datetime.utcnow().timestamp())}_{uuid.uuid4().hex[:8]}"
@@ -2005,13 +2124,16 @@ async def create_campaign_frontend(campaign_data: Dict[str, Any] = Body(...), cu
             "created_at": datetime.utcnow().isoformat(),
             "location": {
                 "lat": location.get('lat', 25.2048),
-                "lon": location.get('lon', 55.2708)
+                "lon": location.get('lon', 55.2708),
+                "address": location_label,
+                "label": location_label,
+                "name": location_label,
             },
             "hotspot": {
                 "report_count": 1,
                 "report_ids": [],
                 "average_priority": 5,
-                "materials": [materials] if isinstance(materials, str) else materials
+                "materials": materials_list,
             },
             "goals": {
                 "target_funding_usd": target_funding_usd,
@@ -2032,26 +2154,84 @@ async def create_campaign_frontend(campaign_data: Dict[str, Any] = Body(...), cu
                 "estimated_co2_reduction_kg": estimated_waste_kg * 0.5
             }
         }
+
+        # Enrich location context when missing human-readable label
+        if (
+            not location_label
+            and campaign["location"].get("lat") is not None
+            and campaign["location"].get("lon") is not None
+        ):
+            try:
+                context = reverse_geocode(
+                    float(campaign["location"]["lat"]),
+                    float(campaign["location"]["lon"]),
+                )
+            except Exception:
+                context = None
+
+            if context:
+                resolved_label = (
+                    context.get("display_name")
+                    or context.get("name")
+                    or location_label
+                )
+                campaign["location"]["address"] = resolved_label
+                campaign["location"]["label"] = resolved_label
+                campaign["location"]["name"] = context.get("name") or resolved_label
+                campaign["location"]["context"] = context
+
+        banner_result = await _maybe_generate_campaign_banner(
+            name=campaign_name,
+            description=description,
+            materials=materials_list,
+            location_label=campaign["location"].get("address"),
+        )
+
+        if banner_result:
+            campaign["banner"] = {
+                "data_url": banner_result.data_url,
+                "model": banner_result.model,
+                "prompt": banner_result.prompt,
+                "negative_prompt": banner_result.negative_prompt,
+                "generated_at": datetime.utcnow().isoformat(),
+            }
         
         # Generate embedding from campaign name and materials
-        campaign_text = f"{campaign_name} {materials} cleanup campaign"
-        campaign_embedding = embedder.generate_query_embedding(campaign_text)
+        material_text = " ".join(materials_list)
+        campaign_text = f"{campaign_name} {material_text} cleanup campaign"
+        try:
+            campaign_embedding = embedder.generate_query_embedding(campaign_text)
+        except Exception as embedding_error:
+            print("⚠️  Campaign embedding failed:")
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Failed to create campaign: {embedding_error}") from embedding_error
         
         # Store in Qdrant
-        vector_store.store_campaign(
-            embedding=campaign_embedding,
-            campaign_data=campaign,
-            campaign_id=campaign_id
-        )
+        try:
+            vector_store.store_campaign(
+                embedding=campaign_embedding,
+                campaign_data=campaign,
+                campaign_id=campaign_id
+            )
+        except Exception as storage_error:
+            print("⚠️  Campaign storage failed:")
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Failed to create campaign: {storage_error}") from storage_error
         
         return {
             "status": "success",
             "campaign": campaign,
-            "message": f"Campaign '{campaign_name}' created successfully"
+            "message": f"Campaign '{campaign_name}' created successfully",
+            "banner_generated": bool(banner_result),
         }
         
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create campaign: {str(e)}")
+        print("❌  Campaign creation encountered an unexpected error:")
+        traceback.print_exc()
+        message = str(e) if str(e) else repr(e)
+        raise HTTPException(status_code=500, detail=f"Failed to create campaign: {message}") from e
 
 
 # ============================================================================

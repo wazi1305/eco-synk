@@ -777,15 +777,6 @@ const CameraPage = () => {
 
                 {isFlashing && <Box position="absolute" inset={0} bg="white" opacity={0.7} pointerEvents="none" />}
 
-                <Center position="absolute" inset={0} pointerEvents="none">
-                  <VStack spacing={4}>
-                    <Box borderWidth={4} borderColor="brand.400" borderRadius="full" w={48} h={48} opacity={0.5} />
-                    <Text color="white" textAlign="center" fontSize="sm" fontWeight="semibold" opacity={0.75}>
-                      Center the trash in the circle
-                    </Text>
-                  </VStack>
-                </Center>
-
                 <Flex position="absolute" bottom="6rem" left="50%" transform="translateX(-50%)" justify="center" zIndex={10}>
                   <Button
                     onClick={capture}

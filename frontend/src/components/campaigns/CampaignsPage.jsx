@@ -44,29 +44,42 @@ const CampaignList = ({
   onJoin,
   onDonate
 }) => (
-  <Box flex="1">
+  <Box flex="1" minH="calc(100vh - 200px)">
     {isLoading ? (
       <Center py={20}>
         <VStack spacing={4}>
-          <Spinner size="lg" thickness="4px" color="brand.500" />
-          <Text color="gray.500">Loading campaigns from Qdrant…</Text>
+          <Spinner size="lg" thickness="3px" color="brand.500" />
+          <Text color="neutral.400" fontSize="sm">Loading campaigns from Qdrant…</Text>
         </VStack>
       </Center>
     ) : campaigns.length === 0 ? (
-      <VStack justify="center" align="center" h="full" spacing={4} py={12}>
-        <Heading size="lg" textAlign="center" color="gray.600">
+      <VStack justify="center" align="center" h="full" spacing={4} py={12} px={6}>
+        <Box
+          w="80px"
+          h="80px"
+          borderRadius="full"
+          bg="neutral.800"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          border="2px solid"
+          borderColor="neutral.700"
+        >
+          <Text fontSize="3xl">🌍</Text>
+        </Box>
+        <Heading size="lg" textAlign="center" color="neutral.200" fontWeight="600">
           {isEmpty ? 'No campaigns found' : 'No campaigns yet'}
         </Heading>
-        <Text textAlign="center" color="gray.500" maxW="md">
+        <Text textAlign="center" color="neutral.400" maxW="md" lineHeight="1.6">
           {isEmpty
-            ? 'Try a different search term'
+            ? 'Try a different search term or check back soon'
             : activeTab === 0
             ? 'Check back soon for new cleanup opportunities!'
             : 'Complete some campaigns to see them here'}
         </Text>
       </VStack>
     ) : (
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6} p={6} pb={6}>
+      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={5} p={6} pb={6}>
         {campaigns.map((campaign) => (
           <CampaignCard
             key={campaign.id}
@@ -284,17 +297,18 @@ const CampaignsPage = () => {
   };
 
   return (
-    <Flex direction="column" h="full" bg="gray.50" overflow="hidden" className="safe-area-inset">
-      {/* Header - Collapsible */}
+    <Flex direction="column" h="full" bg="neutral.900" overflow="hidden" className="safe-area-inset">
+      {/* Header - Collapsible with modern design */}
       <Box
-        bgGradient="linear(to-r, brand.600, brand.500)"
+        bg="rgba(2, 2, 2, 0.95)"
+        borderBottom="1px solid"
+        borderColor="neutral.800"
         color="white"
         px={4}
         pt={6}
         pb={4}
         className="safe-area-inset-top"
         flexShrink={0}
-        boxShadow="sm"
         position="fixed"
         top={0}
         left={0}
@@ -302,13 +316,21 @@ const CampaignsPage = () => {
         transform={showHeader ? "translateY(0)" : "translateY(-100%)"}
         transition="transform 0.3s ease"
         zIndex={20}
+        backdropFilter="blur(20px)"
       >
         <VStack spacing={4} align="start">
           <Box>
-            <Heading as="h1" size="lg" fontWeight="bold" letterSpacing="tight">
+            <Heading 
+              as="h1" 
+              size="xl" 
+              fontWeight="700" 
+              letterSpacing="-0.02em"
+              bgGradient="linear(to-r, brand.400, brand.600)"
+              bgClip="text"
+            >
               Campaigns
             </Heading>
-            <Text fontSize="sm" opacity={0.9} fontWeight="medium">
+            <Text fontSize="sm" color="neutral.400" fontWeight="400">
               Join cleanup initiatives in your community
             </Text>
           </Box>
@@ -317,24 +339,23 @@ const CampaignsPage = () => {
           <Box w="full">
             <InputGroup size="md">
               <InputLeftElement pointerEvents="none">
-                <Icon as={FiSearch} color="gray.400" />
+                <Icon as={FiSearch} color="neutral.500" />
               </InputLeftElement>
               <Input
                 placeholder="Search campaigns, locations..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                borderRadius="lg"
-                bg="white"
+                borderRadius="12px"
+                bg="neutral.800"
                 border="1px solid"
-                borderColor="gray.200"
-                color="gray.900"
-                _placeholder={{ color: 'gray.500' }}
+                borderColor="neutral.700"
+                color="neutral.50"
+                _placeholder={{ color: 'neutral.500' }}
                 _focus={{ 
-                  borderColor: 'brand.400', 
-                  bg: 'white',
-                  boxShadow: '0 0 0 1px var(--chakra-colors-brand-400)'
+                  borderColor: 'brand.500', 
+                  boxShadow: '0 0 0 1px #2fd463'
                 }}
-                _hover={{ borderColor: 'gray.300' }}
+                _hover={{ borderColor: 'neutral.600' }}
               />
             </InputGroup>
           </Box>
@@ -342,36 +363,42 @@ const CampaignsPage = () => {
           {/* Tabs in Header */}
           <Box w="full">
             <Tabs index={activeTab} onChange={setActiveTab}>
-              <TabList border="none" gap={1}>
+              <TabList border="none" gap={2}>
                 <Tab 
                   fontWeight="600" 
                   fontSize="sm"
-                  color="whiteAlpha.700"
+                  color="neutral.400"
                   _selected={{ 
-                    color: 'white', 
-                    bg: 'whiteAlpha.20', 
-                    borderRadius: 'md'
+                    color: 'brand.500', 
+                    bg: 'rgba(47, 212, 99, 0.1)', 
+                    borderRadius: '10px',
+                    borderBottom: '2px solid',
+                    borderBottomColor: 'brand.500'
                   }}
-                  _hover={{ color: 'white', bg: 'whiteAlpha.10' }}
-                  borderRadius="md"
+                  _hover={{ color: 'neutral.200', bg: 'neutral.800' }}
+                  borderRadius="10px"
                   px={4}
                   py={2}
+                  transition="all 0.2s"
                 >
                   Active ({activeCampaigns.length})
                 </Tab>
                 <Tab 
                   fontWeight="600" 
                   fontSize="sm"
-                  color="whiteAlpha.700"
+                  color="neutral.400"
                   _selected={{ 
-                    color: 'white', 
-                    bg: 'whiteAlpha.20', 
-                    borderRadius: 'md'
+                    color: 'brand.500', 
+                    bg: 'rgba(47, 212, 99, 0.1)', 
+                    borderRadius: '10px',
+                    borderBottom: '2px solid',
+                    borderBottomColor: 'brand.500'
                   }}
-                  _hover={{ color: 'white', bg: 'whiteAlpha.10' }}
-                  borderRadius="md"
+                  _hover={{ color: 'neutral.200', bg: 'neutral.800' }}
+                  borderRadius="10px"
                   px={4}
                   py={2}
+                  transition="all 0.2s"
                 >
                   Completed ({completedCampaigns.length})
                 </Tab>
@@ -391,21 +418,27 @@ const CampaignsPage = () => {
             <HStack spacing={2}>
               <Button
                 size="sm"
+                bg="brand.500"
+                color="neutral.900"
+                onClick={() => setShowCreateForm(true)}
                 colorScheme="whiteAlpha"
                 onClick={handleCreateCampaign}
                 borderRadius="full"
+                _hover={{ bg: 'brand.600' }}
               >
                 + Create
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                colorScheme="whiteAlpha"
+                borderColor="neutral.700"
+                color="neutral.200"
                 leftIcon={<FiRefreshCw />}
                 onClick={handleRefresh}
                 isLoading={isRefreshing}
                 loadingText="Refreshing"
                 borderRadius="full"
+                _hover={{ bg: 'neutral.700', borderColor: 'brand.500', color: 'brand.500' }}
               >
                 Refresh
               </Button>

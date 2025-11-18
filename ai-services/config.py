@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     
     # API Keys
     gemini_api_key: str = os.getenv("GEMINI_API_KEY", "")
+    google_api_key: str = os.getenv("GOOGLE_API_KEY", os.getenv("GEMINI_API_KEY", ""))
     qdrant_url: str = os.getenv("QDRANT_URL", "")
     qdrant_api_key: str = os.getenv("QDRANT_API_KEY", "")
     ai_ml_api_key: str = os.getenv("AI_ML_API_KEY", "2GENAIDUB")
@@ -37,6 +38,7 @@ class Settings(BaseSettings):
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dimension: int = 384
     gemini_model: str = "gemini-2.5-flash"
+    google_imagen_model: str = os.getenv("GOOGLE_IMAGEN_MODEL", "imagen-3.0-light")
     
     # Qdrant Configuration
     trash_reports_collection: str = "trash_reports"
@@ -50,6 +52,7 @@ class Settings(BaseSettings):
     # Geocoding
     geocoding_user_agent: str = os.getenv("GEOCODING_USER_AGENT", "EcoSynk/1.0 (+support@ecosynk.local)")
     geocoding_email: Optional[str] = os.getenv("GEOCODING_EMAIL")
+    geocoding_language: str = os.getenv("GEOCODING_LANGUAGE", "en")
     
     def __init__(self, **kwargs):
         # Override with env vars manually to avoid bool parsing issues

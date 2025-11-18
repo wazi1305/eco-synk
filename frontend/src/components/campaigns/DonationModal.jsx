@@ -38,16 +38,16 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end z-50 safe-area-inset">
+    <div className="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex items-end z-50 safe-area-inset">
       {/* Modal */}
-      <div className="w-full bg-white rounded-t-2xl max-w-md mx-auto animate-slide-up">
+      <div className="w-full bg-neutral-800 border border-neutral-700 rounded-t-2xl max-w-md mx-auto animate-slide-up">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Donate to Campaign</h2>
+        <div className="flex items-center justify-between p-4 border-b border-neutral-700 bg-neutral-900 rounded-t-2xl">
+          <h2 className="text-xl font-bold text-neutral-50">Donate to Campaign</h2>
           <button
             onClick={onClose}
             disabled={isProcessing}
-            className="text-gray-500 hover:text-gray-700 disabled:opacity-50 text-2xl leading-none"
+            className="text-neutral-400 hover:text-neutral-50 hover:bg-neutral-700 rounded-lg p-1 disabled:opacity-50 text-2xl leading-none transition-all"
             aria-label="Close"
           >
             ✕
@@ -55,24 +55,24 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
         </div>
 
         {/* Campaign Info */}
-        <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50">
-          <h3 className="font-bold text-gray-900 mb-2">{campaign.title}</h3>
+        <div className="p-4 bg-gradient-to-br from-brand-500/10 to-brand-600/5 border-b border-neutral-700">
+          <h3 className="font-bold text-neutral-50 mb-2">{campaign.title}</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">Raised:</span>
-              <span className="font-bold text-gray-900">${campaign.funding.current}</span>
+              <span className="text-neutral-400">Raised:</span>
+              <span className="font-bold text-neutral-50">${campaign.funding.current}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Goal:</span>
-              <span className="font-bold text-gray-900">${campaign.funding.goal}</span>
+              <span className="text-neutral-400">Goal:</span>
+              <span className="font-bold text-neutral-50">${campaign.funding.goal}</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+            <div className="w-full bg-neutral-700 rounded-full h-2 mt-2">
               <div
-                className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full transition-all duration-300"
+                className="bg-gradient-to-r from-brand-500 to-brand-600 h-2 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(47,212,99,0.4)]"
                 style={{ width: `${fundingPercent}%` }}
               />
             </div>
-            <div className="text-xs text-gray-600 text-right mt-1">
+            <div className="text-xs text-neutral-400 text-right mt-1">
               {Math.round(fundingPercent)}% funded
             </div>
           </div>
@@ -81,7 +81,7 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Amount Input */}
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">
+            <label className="block text-sm font-bold text-neutral-50 mb-2">
               Donation Amount
             </label>
             <div className="relative">
@@ -95,7 +95,7 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
                   setAmount(parseInt(e.target.value) || '');
                   setError(null);
                 }}
-                className="w-full pl-10 pr-3 py-3 border-2 border-gray-200 rounded-lg focus:border-green-500 focus:outline-none text-lg font-bold"
+                className="w-full pl-10 pr-3 py-3 border-2 border-neutral-700 bg-neutral-700 rounded-lg focus:border-brand-500 focus:ring-2 focus:ring-brand-500 focus:outline-none text-lg font-bold text-neutral-50 placeholder-neutral-400"
                 placeholder="0"
                 disabled={isProcessing}
               />
@@ -113,10 +113,10 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
                   setError(null);
                 }}
                 disabled={isProcessing}
-                className={`py-2 px-3 rounded-lg font-bold text-sm transition-all duration-200 min-h-10 ${
+                className={`py-2 px-3 rounded-lg font-bold text-sm transition-all duration-200 min-h-10 border ${
                   amount === preset
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+                    ? 'bg-brand-500 text-neutral-900 border-brand-500 shadow-[0_0_10px_rgba(47,212,99,0.4)]'
+                    : 'bg-neutral-700 text-neutral-200 hover:bg-neutral-600 border-neutral-600'
                 } disabled:opacity-50`}
               >
                 ${preset}
@@ -126,12 +126,16 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
 
           {/* Payment Method */}
           <div>
-            <label className="block text-sm font-bold text-gray-900 mb-2">
+            <label className="block text-sm font-bold text-neutral-50 mb-2">
               Payment Method
             </label>
             <div className="space-y-2">
               {['card', 'paypal', 'apple_pay'].map((method) => (
-                <label key={method} className="flex items-center p-3 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-green-500 transition-colors duration-200">
+                <label key={method} className={`flex items-center p-3 border-2 rounded-lg cursor-pointer transition-all duration-200 ${
+                  paymentMethod === method
+                    ? 'border-brand-500 bg-rgba(47,212,99,0.1)'
+                    : 'border-neutral-700 bg-neutral-700 hover:border-brand-500'
+                }`}>
                   <input
                     type="radio"
                     name="paymentMethod"
@@ -139,9 +143,9 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
                     checked={paymentMethod === method}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     disabled={isProcessing}
-                    className="w-4 h-4"
+                    className="w-4 h-4 accent-brand-500"
                   />
-                  <span className="ml-3 font-medium text-gray-900">
+                  <span className="ml-3 font-medium text-neutral-50">
                     {method === 'card' && '💳 Credit/Debit Card'}
                     {method === 'paypal' && '🅿️ PayPal'}
                     {method === 'apple_pay' && '🍎 Apple Pay'}
@@ -153,7 +157,7 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
 
           {/* Error Message */}
           {error && (
-            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm font-medium">
+            <div className="p-3 bg-red-900/20 border border-red-500 text-red-400 rounded-lg text-sm font-medium">
               ❌ {error}
             </div>
           )}
@@ -162,7 +166,7 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
           <button
             type="submit"
             disabled={isProcessing || !amount}
-            className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white py-4 rounded-lg font-bold transition-all duration-200 min-h-12"
+            className="w-full bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 disabled:opacity-50 disabled:cursor-not-allowed text-neutral-900 py-4 rounded-lg font-bold transition-all duration-200 min-h-12 shadow-[0_0_10px_rgba(47,212,99,0.3)] hover:shadow-[0_0_15px_rgba(47,212,99,0.5)]"
           >
             {isProcessing ? (
               <div className="flex items-center justify-center">

@@ -80,6 +80,9 @@ class CampaignService {
       const requestBody = {
         campaign_name: campaignData.campaign_name,
         location: campaignData.location,
+        location_label: campaignData.location_label,
+        description: campaignData.description,
+        materials: campaignData.materials,
         hotspot: campaignData.hotspot || {
           report_count: 1,
           report_ids: [],
@@ -119,7 +122,8 @@ class CampaignService {
       return {
         success: true,
         campaign: result.campaign,
-        message: result.message
+        message: result.message,
+        bannerGenerated: Boolean(result.banner_generated)
       };
 
     } catch (error) {

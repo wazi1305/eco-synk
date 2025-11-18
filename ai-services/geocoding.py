@@ -30,6 +30,8 @@ def _build_params(lat: float, lon: float) -> Dict[str, Any]:
         "zoom": 16,
         "addressdetails": 1,
     }
+    language = settings.geocoding_language or "en"
+    params["accept-language"] = language
     if settings.geocoding_email:
         params["email"] = settings.geocoding_email
     return params

@@ -1,3 +1,5 @@
+import { normalizeLocation as normalizeLocationPayload } from './dataTransformers';
+
 const buildVolunteers = (campaign) => {
   if (Array.isArray(campaign.volunteers) && campaign.volunteers.length) {
     return campaign.volunteers;
@@ -42,16 +44,49 @@ const buildEsgImpact = (campaign) => {
 };
 
 const ensureLocation = (campaign) => {
-  if (campaign.location && typeof campaign.location === 'object') {
-    return campaign.location;
+  const candidates = [
+    campaign.location,
+    campaign.metadata?.location,
+    campaign.hotspot?.location,
+    campaign.hotspot?.coordinates,
+    campaign.hotspot?.center,
+    campaign.metadata?.context?.geo,
+    {
+      lat: campaign.lat ?? campaign.latitude,
+      lng: campaign.lng ?? campaign.lon ?? campaign.longitude,
+      address: campaign.address,
+    }
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    const normalized = normalizeLocationPayload(candidate);
+    if (normalized.lat !== null && normalized.lng !== null) {
+      const addressFallback =
+        normalized.address && normalized.address !== 'Unknown location'
+          ? normalized.address
+          : campaign.location?.address ||
+            campaign.hotspot?.address ||
+            campaign.metadata?.location?.address ||
+            campaign.metadata?.context?.address;
+
+      return {
+        ...normalized,
+        address: addressFallback || normalized.address,
+      };
+    }
   }
 
-  const lat = campaign.hotspot?.coordinates?.lat ?? campaign.hotspot?.coordinates?.latitude ?? null;
-  const lng = campaign.hotspot?.coordinates?.lng ?? campaign.hotspot?.coordinates?.longitude ?? null;
   return {
-    lat,
-    lng,
-    address: campaign.hotspot?.address || 'Unknown location'
+    lat: null,
+    lng: null,
+    lon: null,
+    address: campaign.hotspot?.address || campaign.location?.address || 'Unknown location',
+    name: null,
+    displayName: null,
   };
 };
 

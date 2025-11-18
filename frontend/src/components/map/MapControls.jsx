@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   HStack,
@@ -47,7 +47,18 @@ const MapControls = ({
 }) => {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
   const [distanceFilter, setDistanceFilter] = useState(filters.maxDistance || 25);
+  const [distanceEnabled, setDistanceEnabled] = useState(filters.enableDistanceFilter || false);
   const [showCompleted, setShowCompleted] = useState(filters.showCompleted || false);
+
+  useEffect(() => {
+    setDistanceFilter(filters.maxDistance || 25);
+    setDistanceEnabled(Boolean(filters.enableDistanceFilter));
+    setShowCompleted(Boolean(filters.showCompleted));
+  }, [filters.maxDistance, filters.enableDistanceFilter, filters.showCompleted]);
+
+  useEffect(() => {
+    setLocalSearchTerm(searchTerm);
+  }, [searchTerm]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -58,7 +69,17 @@ const MapControls = ({
     setDistanceFilter(value);
     onFilterChange({
       ...filters,
-      maxDistance: value
+      maxDistance: value,
+      enableDistanceFilter: true
+    });
+  };
+
+  const handleDistanceToggle = (checked) => {
+    setDistanceEnabled(checked);
+    onFilterChange({
+      ...filters,
+      enableDistanceFilter: checked,
+      maxDistance: distanceFilter
     });
   };
 
@@ -72,11 +93,13 @@ const MapControls = ({
 
   const handleClearFilters = () => {
     setDistanceFilter(25);
+    setDistanceEnabled(false);
     setShowCompleted(false);
     setLocalSearchTerm('');
     onSearch('');
     onFilterChange({
       maxDistance: 25,
+      enableDistanceFilter: false,
       showCompleted: false,
       priority: null
     });
@@ -127,50 +150,54 @@ const MapControls = ({
           </Button>
         </HStack>
 
-        {/* Search Bar */}
-        <Box bg="white" borderRadius="lg" boxShadow="md" p={3} minW="280px">
-          <form onSubmit={handleSearchSubmit}>
-            <InputGroup size="sm">
-              <InputLeftElement>
-                <FiSearch color="gray.400" />
-              </InputLeftElement>
-              <Input
-                placeholder="Search campaigns or locations..."
-                value={localSearchTerm}
-                onChange={(e) => setLocalSearchTerm(e.target.value)}
-                borderRadius="md"
-                bg="gray.50"
-                border="none"
-              />
-            </InputGroup>
-          </form>
-        </Box>
+        {currentView === 'map' && (
+          <>
+            {/* Search Bar */}
+            <Box bg="white" borderRadius="lg" boxShadow="md" p={3} minW="280px">
+              <form onSubmit={handleSearchSubmit}>
+                <InputGroup size="sm">
+                  <InputLeftElement>
+                    <FiSearch color="gray.400" />
+                  </InputLeftElement>
+                  <Input
+                    placeholder="Search campaigns or locations..."
+                    value={localSearchTerm}
+                    onChange={(e) => setLocalSearchTerm(e.target.value)}
+                    borderRadius="md"
+                    bg="gray.50"
+                    border="none"
+                  />
+                </InputGroup>
+              </form>
+            </Box>
 
-        {/* Quick Priority Filters */}
-        <HStack spacing={2}>
-          {[
-            { key: 'high', label: 'Urgent', color: 'red' },
-            { key: 'medium', label: 'Medium', color: 'orange' },
-            { key: 'low', label: 'Low', color: 'blue' }
-          ].map(({ key, label, color }) => (
-            <Button
-              key={key}
-              size="sm"
-              variant={filters.priority === key ? 'solid' : 'outline'}
-              colorScheme={color}
-              onClick={() => handlePriorityFilter(key)}
-              bg={filters.priority === key ? undefined : 'white'}
-              boxShadow="sm"
-            >
-              {label}
-              {campaignCounts[key] && (
-                <Badge ml={2} colorScheme={color} variant="solid">
-                  {campaignCounts[key]}
-                </Badge>
-              )}
-            </Button>
-          ))}
-        </HStack>
+            {/* Quick Priority Filters */}
+            <HStack spacing={2}>
+              {[
+                { key: 'high', label: 'Urgent', color: 'red' },
+                { key: 'medium', label: 'Medium', color: 'orange' },
+                { key: 'low', label: 'Low', color: 'blue' }
+              ].map(({ key, label, color }) => (
+                <Button
+                  key={key}
+                  size="sm"
+                  variant={filters.priority === key ? 'solid' : 'outline'}
+                  colorScheme={color}
+                  onClick={() => handlePriorityFilter(key)}
+                  bg={filters.priority === key ? undefined : 'white'}
+                  boxShadow="sm"
+                >
+                  {label}
+                  {campaignCounts[key] && (
+                    <Badge ml={2} colorScheme={color} variant="solid">
+                      {campaignCounts[key]}
+                    </Badge>
+                  )}
+                </Button>
+              ))}
+            </HStack>
+          </>
+        )}
 
         {/* Advanced Filters */}
         <Popover placement="left">
@@ -184,7 +211,7 @@ const MapControls = ({
               position="relative"
             >
               {/* Filter indicator */}
-              {(filters.maxDistance < 25 || filters.showCompleted || filters.priority) && (
+              {(filters.enableDistanceFilter || filters.showCompleted || filters.priority) && (
                 <Box
                   position="absolute"
                   top="-2px"
@@ -207,16 +234,30 @@ const MapControls = ({
 
                 {/* Distance Filter */}
                 <Box>
-                  <Text fontSize="sm" fontWeight="medium" mb={2}>
-                    Maximum Distance: {distanceFilter}km
-                  </Text>
+                  <HStack justify="space-between" mb={1}>
+                    <Text fontSize="sm" fontWeight="medium">
+                      Distance Limit
+                    </Text>
+                    <HStack spacing={2}>
+                      <Text fontSize="xs" color="gray.500">
+                        {distanceEnabled ? `${distanceFilter}km` : 'No limit'}
+                      </Text>
+                      <Switch
+                        size="sm"
+                        colorScheme="brand"
+                        isChecked={distanceEnabled}
+                        onChange={(e) => handleDistanceToggle(e.target.checked)}
+                      />
+                    </HStack>
+                  </HStack>
                   <Slider
                     value={distanceFilter}
                     onChange={handleDistanceChange}
                     min={1}
-                    max={50}
+                    max={100}
                     step={1}
                     colorScheme="brand"
+                    isDisabled={!distanceEnabled}
                   >
                     <SliderTrack>
                       <SliderFilledTrack />
@@ -225,7 +266,7 @@ const MapControls = ({
                   </Slider>
                   <HStack justify="space-between" fontSize="xs" color="gray.500" mt={1}>
                     <Text>1km</Text>
-                    <Text>50km</Text>
+                    <Text>100km</Text>
                   </HStack>
                 </Box>
 
@@ -252,13 +293,13 @@ const MapControls = ({
                 </Button>
 
                 {/* Filter Summary */}
-                {(filters.maxDistance < 25 || filters.showCompleted || filters.priority) && (
+                {(filters.enableDistanceFilter || filters.showCompleted || filters.priority) && (
                   <Box p={2} bg="brand.50" borderRadius="md" fontSize="sm">
                     <Text color="brand.700" fontWeight="medium">
                       Active Filters:
                     </Text>
                     <VStack align="start" spacing={1} mt={1}>
-                      {filters.maxDistance < 25 && (
+                      {filters.enableDistanceFilter && (
                         <Text color="brand.600" fontSize="xs">
                           • Within {filters.maxDistance}km
                         </Text>

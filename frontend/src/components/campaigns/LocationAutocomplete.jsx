@@ -34,11 +34,8 @@ const LocationAutocomplete = ({
     }
 
     setIsLoading(true);
-    console.log('Searching for:', query);
-    
     try {
       const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8&addressdetails=1&countrycodes=ae,us,gb,ca,au,in`;
-      console.log('API URL:', url);
       
       const response = await fetch(url, {
         headers: {
@@ -46,11 +43,8 @@ const LocationAutocomplete = ({
         }
       });
       
-      console.log('Response status:', response.status);
-      
       if (response.ok) {
         const data = await response.json();
-        console.log('API response:', data);
         
         if (data && data.length > 0) {
           const formattedSuggestions = data
@@ -68,22 +62,17 @@ const LocationAutocomplete = ({
             }))
             .sort((a, b) => b.score - a.score)
             .slice(0, 5);
-          
-          console.log('Ranked suggestions:', formattedSuggestions);
           setSuggestions(formattedSuggestions);
           setShowSuggestions(true);
           setSelectedIndex(-1);
         } else {
-          console.log('No results found');
           setSuggestions([]);
           setShowSuggestions(false);
         }
       } else {
-        console.error('API request failed:', response.status, response.statusText);
         setSuggestions([]);
       }
     } catch (error) {
-      console.error('Location search failed:', error);
       setSuggestions([]);
     } finally {
       setIsLoading(false);

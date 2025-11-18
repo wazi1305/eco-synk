@@ -1,4 +1,5 @@
 import { calculateDistance } from './distanceCalculator';
+import { API_BASE_URL } from '../services/apiConfig';
 
 const AED_CONVERSION = 3.67;
 const DEFAULT_ORGANIZER = { name: 'EcoSynk Operations', avatar: '🌱' };
@@ -56,62 +57,218 @@ const computeDaysRemaining = (endDate) => {
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
 };
 
-const reverseGeocode = async (lat, lng) => {
+const reverseGeocodeCache = new Map();
+
+const buildAddressLabel = (address, displayName, fallback) => {
+  if (!address || typeof address !== 'object') {
+    return displayName || fallback;
+  }
+
+  const parts = [];
+
+  if (address.house_number && address.road) {
+    parts.push(`${address.house_number} ${address.road}`);
+  } else if (address.road) {
+    parts.push(address.road);
+  }
+
+  if (address.neighbourhood) {
+    parts.push(address.neighbourhood);
+  } else if (address.suburb) {
+    parts.push(address.suburb);
+  }
+
+  if (address.city) {
+    parts.push(address.city);
+  } else if (address.town) {
+    parts.push(address.town);
+  }
+
+  if (address.state && !parts.includes(address.state)) {
+    parts.push(address.state);
+  }
+
+  if (address.country && !parts.includes(address.country)) {
+    parts.push(address.country);
+  }
+
+  if (parts.length === 0) {
+    return displayName || fallback;
+  }
+
+  return parts.join(', ');
+};
+
+export const reverseGeocode = async (lat, lng) => {
+  const latNum = Number(lat);
+  const lngNum = Number(lng);
+
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+    return 'Unknown location';
+  }
+
+  const languageKey = 'en';
+  const cacheKey = `${latNum.toFixed(5)},${lngNum.toFixed(5)}|${languageKey}`;
+  if (reverseGeocodeCache.has(cacheKey)) {
+    return reverseGeocodeCache.get(cacheKey);
+  }
+
+  const fallbackLabel = 'Unknown location';
+
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1&accept-language=en`);
-    const data = await response.json();
-    
-    if (data.address) {
-      const addr = data.address;
-      const parts = [];
-      
-      if (addr.house_number && addr.road) {
-        parts.push(`${addr.house_number} ${addr.road}`);
-      } else if (addr.road) {
-        parts.push(addr.road);
-      }
-      
-      if (addr.neighbourhood) {
-        parts.push(addr.neighbourhood);
-      } else if (addr.suburb) {
-        parts.push(addr.suburb);
-      }
-      
-      if (addr.city) {
-        parts.push(addr.city);
-      } else if (addr.town) {
-        parts.push(addr.town);
-      }
-      
-      if (addr.state && !parts.includes(addr.state)) {
-        parts.push(addr.state);
-      }
-      
-      if (addr.country && !parts.includes(addr.country)) {
-        parts.push(addr.country);
-      }
-      
-      return parts.length > 0 ? parts.join(', ') : data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    const params = new URLSearchParams({
+      lat: latNum.toString(),
+      lon: lngNum.toString(),
+    });
+
+    const response = await fetch(`${API_BASE_URL}/geocode/reverse?${params.toString()}`, {
+      headers: {
+        Accept: 'application/json',
+        'Accept-Language': languageKey,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Reverse geocoding failed with status ${response.status}`);
     }
-    
-    return data.display_name || `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+
+    const payload = await response.json();
+    const address = payload?.address || payload?.context?.address;
+    const displayName = payload?.label || payload?.display_name || payload?.context?.display_name;
+    const label = buildAddressLabel(address, displayName, fallbackLabel);
+
+    reverseGeocodeCache.set(cacheKey, label);
+    return label;
   } catch (error) {
-    return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    console.warn('reverseGeocode error', error);
+    reverseGeocodeCache.delete(cacheKey);
+    return fallbackLabel;
   }
 };
 
-const normalizeLocation = (locationPayload) => {
-  if (!locationPayload) {
-    return { lat: null, lng: null, address: 'Unknown location' };
+const toCoordinate = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value;
   }
-  const lat = locationPayload.lat ?? locationPayload.latitude ?? null;
-  const lng = locationPayload.lng ?? locationPayload.lon ?? locationPayload.longitude ?? null;
-  const address = locationPayload.address || locationPayload.label || `Lat ${lat?.toFixed?.(3) ?? 'N/A'}, Lon ${lng?.toFixed?.(3) ?? 'N/A'}`;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+};
+
+export const normalizeLocation = (locationPayload) => {
+  if (!locationPayload) {
+    return { lat: null, lng: null, lon: null, address: 'Unknown location' };
+  }
+
+  const candidate =
+    locationPayload.geo ||
+    locationPayload.coordinates ||
+    locationPayload.position ||
+    locationPayload;
+
+  let lat =
+    candidate.lat ??
+    candidate.latitude ??
+    candidate.y ??
+    null;
+  let lng =
+    candidate.lng ??
+    candidate.lon ??
+    candidate.longitude ??
+    candidate.x ??
+    null;
+
+  if (Array.isArray(candidate)) {
+    // Assume [lon, lat] GeoJSON ordering
+    lng = candidate[0];
+    lat = candidate[1];
+  } else if (Array.isArray(candidate.coordinates)) {
+    lng = candidate.coordinates[0];
+    lat = candidate.coordinates[1];
+  } else {
+    const geojsonCoords =
+      locationPayload.coordinates ||
+      locationPayload.geojson?.coordinates ||
+      locationPayload.geometry?.coordinates ||
+      locationPayload.position?.coordinates;
+    if (Array.isArray(geojsonCoords)) {
+      lng = geojsonCoords[0];
+      lat = geojsonCoords[1];
+    }
+  }
+
+  const parsedLat = toCoordinate(lat);
+  const parsedLng = toCoordinate(lng);
+
+  const context = locationPayload.context || locationPayload.metadata?.context || null;
+  const contextAddress = context?.address;
+  const contextName = context?.name || context?.display_name;
+
+  const directAddress = locationPayload.address;
+  const label =
+    locationPayload.label ||
+    locationPayload.name ||
+    locationPayload.display_name ||
+    contextName ||
+    null;
+
+  let structuredAddress = null;
+  if (directAddress && typeof directAddress === 'string') {
+    structuredAddress = directAddress;
+  } else if (directAddress && typeof directAddress === 'object') {
+    structuredAddress = buildAddressLabel(directAddress, contextName || label, null);
+  }
+
+  if (!structuredAddress && contextAddress) {
+    if (typeof contextAddress === 'string') {
+      structuredAddress = contextAddress;
+    } else if (typeof contextAddress === 'object') {
+      structuredAddress = buildAddressLabel(contextAddress, contextName || label, null);
+    }
+  }
+
+  const rawCountry =
+    contextAddress?.country ||
+    locationPayload.country ||
+    locationPayload.countryName ||
+    locationPayload.country_name ||
+    null;
+
+  const rawCountryCode =
+    contextAddress?.country_code ||
+    locationPayload.countryCode ||
+    locationPayload.country_code ||
+    null;
+
+  const normalizedCountryCode =
+    typeof rawCountryCode === 'string'
+      ? rawCountryCode.toUpperCase()
+      : rawCountryCode != null
+        ? String(rawCountryCode).toUpperCase()
+        : null;
+
+  const fallback =
+    structuredAddress ||
+    label ||
+    contextName ||
+    locationPayload.display_name ||
+    (contextAddress?.country ? contextAddress.country : null) ||
+    'Unknown location';
 
   return {
-    lat: typeof lat === 'number' ? lat : null,
-    lng: typeof lng === 'number' ? lng : null,
-    address
+    lat: parsedLat,
+    lng: parsedLng,
+    lon: parsedLng,
+    name: label || null,
+    displayName: contextName || locationPayload.display_name || null,
+    address: structuredAddress || fallback,
+    context: context || null,
+    country: rawCountry || null,
+    countryCode: normalizedCountryCode,
   };
 };
 
@@ -149,6 +306,8 @@ export const transformQdrantCampaign = async (payload, options = {}) => {
   }
 
   let location = normalizeLocation(payload.location);
+  const banner = payload.banner || payload.media?.banner || null;
+  const heroImage = banner?.data_url || banner?.image_url || null;
   
   // If no address but has coordinates, try reverse geocoding
   if (location.lat && location.lng && (!payload.location?.address && !payload.location?.label)) {
@@ -184,6 +343,8 @@ export const transformQdrantCampaign = async (payload, options = {}) => {
     location,
     priority,
     image: deriveCampaignImage(priority, payload.hotspot?.materials),
+    heroImage,
+    banner,
     date: startDate,
     organizer,
     funding: {

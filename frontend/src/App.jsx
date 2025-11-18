@@ -104,6 +104,15 @@ function App() {
   }
 
   return (
+
+    <Flex
+      direction="column"
+      bg="neutral.900"
+      height={windowHeight}
+      className="app-container safe-area-inset"
+      position="relative"
+    >
+
     <AuthProvider>
       <Flex
         direction="column"
@@ -117,7 +126,13 @@ function App() {
         overflowY="auto" 
         overflowX="hidden"
         position="relative"
-        pb="64px" // Add padding for bottom nav
+        pb="80px" // Add padding for floating bottom nav
+        css={{
+          '&::-webkit-scrollbar': {
+            display: 'none',
+          },
+          scrollbarWidth: 'none',
+        }}
       >
         <Routes>
           <Route path="/" element={<Navigate to="/nav" replace />} />
@@ -133,66 +148,97 @@ function App() {
         </Routes>
       </Box>
 
-      {/* Bottom Navigation - Fixed at bottom with safe areas */}
+      {/* Floating Bottom Navigation - Futuristic glass morphism design */}
       <Box
-        bg="white"
-        borderTop="1px solid"
-        borderColor="gray.200"
-        className="safe-area-inset-bottom"
-        flexShrink={0}
-        overflowX="auto"
-        boxShadow="0 -1px 3px rgba(0, 0, 0, 0.1)"
         position="fixed"
-        bottom={0}
-        left={0}
-        right={0}
-        zIndex={50}
+        bottom={4}
+        left="50%"
+        transform="translateX(-50%)"
+        zIndex={100}
+        maxW="480px"
+        w="calc(100% - 32px)"
       >
-        <HStack
-          spacing={0}
-          h="16"
-          minW="max-content"
-          justify="space-around"
-          px={2}
+        <Box
+          bg="rgba(21, 21, 21, 0.8)"
+          backdropFilter="blur(20px) saturate(180%)"
+          border="1px solid"
+          borderColor="neutral.700"
+          borderRadius="20px"
+          boxShadow="0 8px 32px rgba(0, 0, 0, 0.4), 0 0 1px rgba(47, 212, 99, 0.2)"
+          p={2}
         >
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            
-            return (
-              <Tooltip key={tab.id} label={tab.label} placement="top">
-                <Box
-                  as="button"
-                  display="flex"
-                  flexDirection="column"
-                  alignItems="center"
-                  justifyContent="center"
-                  p={2}
-                  flex={1}
-                  minH="16"
-                  minW="14"
-                  cursor="pointer"
-                  transition="all 0.2s"
-                  color={isActive ? 'brand.600' : 'gray.500'}
-                  _hover={{
-                    color: 'brand.500',
-                  }}
-                  _active={{
-                    bg: 'gray.100',
-                  }}
-                  onClick={() => handleNavigation(tab.path)}
-                  aria-label={tab.label}
-                  borderRadius="md"
+          <HStack
+            spacing={1}
+            justify="space-around"
+          >
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              
+              return (
+                <Tooltip 
+                  key={tab.id} 
+                  label={tab.label} 
+                  placement="top"
+                  bg="neutral.800"
+                  color="neutral.50"
+                  borderRadius="8px"
+                  fontSize="xs"
+                  hasArrow
                 >
-                  <Icon size={24} style={{ marginBottom: '0.25rem' }} />
-                  <Box as="span" fontSize="xs" fontWeight="600" mt={1}>
-                    {tab.label}
+                  <Box
+                    as="button"
+                    display="flex"
+                    flexDirection="column"
+                    alignItems="center"
+                    justifyContent="center"
+                    p={2.5}
+                    flex={1}
+                    cursor="pointer"
+                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    color={isActive ? 'brand.500' : 'neutral.400'}
+                    bg={isActive ? 'rgba(47, 212, 99, 0.1)' : 'transparent'}
+                    borderRadius="14px"
+                    position="relative"
+                    _hover={{
+                      color: isActive ? 'brand.400' : 'neutral.200',
+                      bg: isActive ? 'rgba(47, 212, 99, 0.15)' : 'rgba(255, 255, 255, 0.05)',
+                      transform: 'translateY(-2px)',
+                    }}
+                    _active={{
+                      transform: 'translateY(0)',
+                    }}
+                    onClick={() => handleNavigation(tab.path)}
+                    aria-label={tab.label}
+                  >
+                    {/* Active indicator dot */}
+                    {isActive && (
+                      <Box
+                        position="absolute"
+                        top={1}
+                        w="4px"
+                        h="4px"
+                        bg="brand.500"
+                        borderRadius="full"
+                        boxShadow="0 0 8px rgba(47, 212, 99, 0.6)"
+                      />
+                    )}
+                    <Icon size={22} strokeWidth={isActive ? 2.5 : 2} />
+                    <Box 
+                      as="span" 
+                      fontSize="10px" 
+                      fontWeight={isActive ? 600 : 500} 
+                      mt={1}
+                      letterSpacing="0.02em"
+                    >
+                      {tab.label}
+                    </Box>
                   </Box>
-                </Box>
-              </Tooltip>
-            );
-          })}
-        </HStack>
+                </Tooltip>
+              );
+            })}
+          </HStack>
+        </Box>
       </Box>
       </Flex>
     </AuthProvider>

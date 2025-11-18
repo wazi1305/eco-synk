@@ -208,10 +208,13 @@ const ProfilePage = () => {
   }
 
   return (
-    <Flex direction="column" h="full" bg="gray.50" overflow="hidden" className="safe-area-inset">
+    <Flex direction="column" h="full" bg="neutral.900" overflow="hidden" className="safe-area-inset">
       {/* Compact Header - Collapsible */}
       <Box 
-        bgGradient="linear(to-r, brand.600, brand.500)"
+        bg="rgba(2, 2, 2, 0.95)"
+        backdropFilter="blur(20px)"
+        borderBottom="1px solid"
+        borderColor="neutral.800"
         color="white"
         position="fixed"
         top={0}
@@ -221,9 +224,14 @@ const ProfilePage = () => {
         transition="transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
         zIndex={20}
         overflow="hidden"
-        boxShadow="sm"
       >
         <HStack spacing={4} p={4} pt={8} className="safe-area-inset-top">
+          <Circle size="50px" bg="rgba(47, 212, 99, 0.1)" border="2px solid" borderColor="brand.500" fontSize="xl">
+            {USER_DATA.avatar}
+          </Circle>
+          <VStack align="start" spacing={0} flex={1}>
+            <Text fontWeight="600" fontSize="lg" color="neutral.50">{USER_DATA.name}</Text>
+            <Text fontSize="xs" color="neutral.400">{USER_DATA.username}</Text>
           <Circle size="50px" bg="whiteAlpha.20" fontSize="xl">
             {user?.avatar || USER_DATA.avatar}
           </Circle>
@@ -232,10 +240,10 @@ const ProfilePage = () => {
             <Text fontSize="xs" opacity={0.8}>@{user?.name?.toLowerCase().replace(/\s+/g, '') || USER_DATA.username.slice(1)}</Text>
           </VStack>
           <VStack align="end" spacing={0}>
-            <Text fontSize="xl" fontWeight="bold">
+            <Text fontSize="xl" fontWeight="700" color="brand.500">
               {USER_DATA.level}
             </Text>
-            <Text fontSize="xs" opacity={0.8}>LEVEL</Text>
+            <Text fontSize="xs" color="neutral.400" fontWeight="600">LEVEL</Text>
           </VStack>
         </HStack>
       </Box>
@@ -250,23 +258,51 @@ const ProfilePage = () => {
         transition="padding-top 0.3s ease"
       >
         {/* Tabs for Profile and Leaderboard */}
-        <Tabs index={activeTab} onChange={setActiveTab} variant="soft-rounded" colorScheme="brand" px={4} mb={4}>
-          <TabList bg="white" borderRadius="xl" p={1}>
-            <Tab flex={1} fontWeight="bold">My Profile</Tab>
-            <Tab flex={1} fontWeight="bold">🏆 Leaderboard</Tab>
+        <Tabs index={activeTab} onChange={setActiveTab} px={4} mb={4}>
+          <TabList bg="neutral.800" borderRadius="12px" p={1} border="1px solid" borderColor="neutral.700">
+            <Tab 
+              flex={1} 
+              fontWeight="600" 
+              fontSize="sm"
+              color="neutral.400"
+              _selected={{ 
+                color: 'brand.500', 
+                bg: 'rgba(47, 212, 99, 0.1)', 
+                borderRadius: '10px'
+              }}
+            >
+              My Profile
+            </Tab>
+            <Tab 
+              flex={1} 
+              fontWeight="600"
+              fontSize="sm"
+              color="neutral.400"
+              _selected={{ 
+                color: 'brand.500', 
+                bg: 'rgba(47, 212, 99, 0.1)', 
+                borderRadius: '10px'
+              }}
+            >
+              🏆 Leaderboard
+            </Tab>
           </TabList>
           
           <TabPanels>
             <TabPanel p={0} pt={4}>
               {/* Original Profile Content */}
-              <Card bg="white" mx={4} mb={4} borderRadius="xl" overflow="hidden">
+              <Card bg="neutral.800" mx={4} mb={4} borderRadius="16px" overflow="hidden" border="1px solid" borderColor="neutral.700">
           <CardBody p={6}>
             {/* Full Profile Info */}
             <VStack spacing={4}>
-              <Circle size="80px" bg="brand.500" fontSize="2xl">
+              <Circle size="80px" bg="rgba(47, 212, 99, 0.1)" border="3px solid" borderColor="brand.500" fontSize="2xl">
                 {USER_DATA.avatar}
               </Circle>
               <VStack spacing={1} textAlign="center">
+
+                <Heading size="lg" color="neutral.50" fontWeight="700">{USER_DATA.name}</Heading>
+                <Text color="neutral.400" fontSize="sm">{USER_DATA.username}</Text>
+                <HStack spacing={2} color="neutral.400" fontSize="xs">
                 <Heading size="lg" color="gray.900">{user?.name || USER_DATA.name}</Heading>
                 <Text color="gray.600" fontSize="sm">@{user?.name?.toLowerCase().replace(/\s+/g, '') || USER_DATA.username.slice(1)}</Text>
                 <HStack spacing={2} color="gray.500" fontSize="xs">
@@ -278,39 +314,44 @@ const ProfilePage = () => {
               {/* Detailed Stats */}
               <HStack spacing={6} py={3}>
                 <VStack spacing={0}>
-                  <Text fontSize="2xl" fontWeight="bold" color="brand.600">
+                  <Text fontSize="2xl" fontWeight="700" color="brand.500">
                     {USER_DATA.level}
                   </Text>
-                  <Text fontSize="xs" color="gray.500" fontWeight="600">LEVEL</Text>
+                  <Text fontSize="xs" color="neutral.400" fontWeight="600" letterSpacing="0.05em">LEVEL</Text>
                 </VStack>
                 <VStack spacing={0}>
-                  <Text fontSize="2xl" fontWeight="bold" color="gray.900">
+                  <Text fontSize="2xl" fontWeight="700" color="neutral.50">
                     {USER_DATA.totalPoints.toLocaleString()}
                   </Text>
-                  <Text fontSize="xs" color="gray.500" fontWeight="600">POINTS</Text>
+                  <Text fontSize="xs" color="neutral.400" fontWeight="600" letterSpacing="0.05em">POINTS</Text>
                 </VStack>
                 <VStack spacing={0}>
-                  <Text fontSize="lg" fontWeight="bold" color="gray.900">
+                  <Text fontSize="lg" fontWeight="700" color="neutral.50">
                     {USER_DATA.followersCount}
                   </Text>
-                  <Text fontSize="xs" color="gray.500" fontWeight="600">FOLLOWERS</Text>
+                  <Text fontSize="xs" color="neutral.400" fontWeight="600" letterSpacing="0.05em">FOLLOWERS</Text>
                 </VStack>
               </HStack>
 
               {/* Weekly Goal Progress */}
               <Box w="full">
                 <HStack justify="space-between" mb={2}>
-                  <Text fontSize="sm" fontWeight="600" color="gray.700">Weekly Goal</Text>
-                  <Text fontSize="sm" color="brand.600" fontWeight="600">
+                  <Text fontSize="sm" fontWeight="600" color="neutral.200">Weekly Goal</Text>
+                  <Text fontSize="sm" color="brand.500" fontWeight="700">
                     {USER_DATA.currentWeekPoints}/{USER_DATA.weeklyGoal}
                   </Text>
                 </HStack>
                 <Progress 
                   value={progressPercent} 
-                  colorScheme="brand" 
                   size="md" 
                   borderRadius="full"
-                  bg="gray.200"
+                  bg="neutral.700"
+                  sx={{
+                    '& > div': {
+                      bg: 'brand.500',
+                      boxShadow: '0 0 10px rgba(47, 212, 99, 0.5)'
+                    }
+                  }}
                 />
               </Box>
             </VStack>
@@ -321,19 +362,19 @@ const ProfilePage = () => {
         <Box p={4}>
           <SimpleGrid columns={2} spacing={3} mb={4}>
             {STATS_DATA.map((stat, index) => (
-              <Card key={index} bg="white" borderRadius="xl" overflow="hidden">
+              <Card key={index} bg="neutral.800" borderRadius="12px" overflow="hidden" border="1px solid" borderColor="neutral.700">
                 <CardBody p={4}>
                   <HStack justify="space-between">
                     <VStack align="start" spacing={1}>
-                      <Text fontSize="2xl" fontWeight="bold" color="gray.900">
+                      <Text fontSize="2xl" fontWeight="700" color="neutral.50">
                         {stat.value}
                       </Text>
-                      <Text fontSize="xs" color="gray.600" fontWeight="600">
+                      <Text fontSize="xs" color="neutral.400" fontWeight="600" letterSpacing="0.05em">
                         {stat.label.toUpperCase()}
                       </Text>
                     </VStack>
-                    <Circle size="40px" bg={`${stat.color}.100`}>
-                      <Icon as={stat.icon} color={`${stat.color}.600`} boxSize={5} />
+                    <Circle size="40px" bg={`rgba(47, 212, 99, 0.1)`} border="1px solid" borderColor="brand.500">
+                      <Icon as={stat.icon} color="brand.500" boxSize={5} />
                     </Circle>
                   </HStack>
                 </CardBody>
@@ -342,41 +383,41 @@ const ProfilePage = () => {
           </SimpleGrid>
 
           {/* Recent Activity */}
-          <Card bg="white" borderRadius="xl" overflow="hidden">
+          <Card bg="neutral.800" borderRadius="12px" overflow="hidden" border="1px solid" borderColor="neutral.700">
             <CardBody p={0}>
-              <Box p={4} borderBottomWidth={1} borderColor="gray.100">
-                <Heading size="md" color="gray.900">Recent Activity</Heading>
+              <Box p={4} borderBottomWidth={1} borderColor="neutral.700">
+                <Heading size="md" color="neutral.50" fontWeight="700">Recent Activity</Heading>
               </Box>
-              <VStack spacing={0} divider={<Divider />}>
+              <VStack spacing={0} divider={<Divider borderColor="neutral.700" />}>
                 {RECENT_ACTIVITIES.map((activity) => (
                   <Box key={activity.id} p={4} w="full">
                     <HStack spacing={3}>
-                      <Circle size="40px" bg="gray.100" fontSize="lg">
+                      <Circle size="40px" bg="neutral.700" fontSize="lg">
                         {activity.icon}
                       </Circle>
                       <VStack align="start" spacing={1} flex={1}>
-                        <Text fontWeight="600" color="gray.900" fontSize="sm">
+                        <Text fontWeight="600" color="neutral.50" fontSize="sm">
                           {activity.title}
                         </Text>
                         {activity.location && (
-                          <Text color="gray.600" fontSize="xs">
+                          <Text color="neutral.300" fontSize="xs">
                             📍 {activity.location}
                           </Text>
                         )}
                         {activity.description && (
-                          <Text color="gray.600" fontSize="xs">
+                          <Text color="neutral.300" fontSize="xs">
                             {activity.description}
                           </Text>
                         )}
                         <HStack spacing={3}>
-                          <Text color="gray.500" fontSize="xs">{activity.date}</Text>
+                          <Text color="neutral.400" fontSize="xs">{activity.date}</Text>
                           {activity.points && (
-                            <Badge colorScheme="brand" fontSize="xs">
+                            <Badge bg="rgba(47, 212, 99, 0.1)" color="brand.500" fontSize="xs" border="1px solid" borderColor="brand.500">
                               +{activity.points} pts
                             </Badge>
                           )}
                           {activity.items && (
-                            <Badge colorScheme="blue" fontSize="xs">
+                            <Badge bg="rgba(66, 153, 225, 0.1)" color="blue.300" fontSize="xs" border="1px solid" borderColor="blue.400">
                               {activity.items} items
                             </Badge>
                           )}
@@ -388,8 +429,14 @@ const ProfilePage = () => {
               </VStack>
               
               {/* View More Button */}
-              <Box p={4} borderTopWidth={1} borderColor="gray.100">
-                <Button w="full" variant="ghost" colorScheme="brand" size="sm">
+              <Box p={4} borderTopWidth={1} borderColor="neutral.700">
+                <Button 
+                  w="full" 
+                  variant="ghost" 
+                  size="sm"
+                  color="brand.500"
+                  _hover={{ bg: 'rgba(47, 212, 99, 0.1)' }}
+                >
                   View All Activity
                 </Button>
               </Box>
@@ -400,20 +447,34 @@ const ProfilePage = () => {
           <VStack spacing={3} mt={6} pb={6}>
             <Button 
               w="full" 
-              colorScheme="brand" 
+              bg="brand.500"
+              color="neutral.900"
               size="lg" 
-              borderRadius="xl"
+              borderRadius="12px"
               leftIcon={<Icon as={FiTarget} />}
+              _hover={{
+                bg: 'brand.600',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 0 20px rgba(47, 212, 99, 0.4)'
+              }}
+              transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
             >
               Join Campaign
             </Button>
             <Button 
               w="full" 
               variant="outline" 
-              colorScheme="brand" 
+              borderColor="neutral.700"
+              color="neutral.200"
               size="lg" 
-              borderRadius="xl"
+              borderRadius="12px"
               leftIcon={<Icon as={FiAward} />}
+              _hover={{
+                bg: 'rgba(47, 212, 99, 0.1)',
+                borderColor: 'brand.500',
+                color: 'brand.500'
+              }}
+              transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
             >
               View Achievements
             </Button>
@@ -421,12 +482,12 @@ const ProfilePage = () => {
           </Box>
             </TabPanel>            <TabPanel p={0} pt={4}>
               {/* Leaderboard Section */}
-              <Card bg="white" borderRadius="xl" overflow="hidden">
+              <Card bg="neutral.800" borderRadius="12px" overflow="hidden" border="1px solid" borderColor="neutral.700" mx={4}>
                 <CardBody p={6}>
                   <VStack spacing={4} align="stretch">
                     <HStack justify="space-between" align="center">
-                      <Heading size="md" color="gray.900">🏆 Top Volunteers</Heading>
-                      <Badge colorScheme="brand" fontSize="xs" px={2} py={1}>
+                      <Heading size="md" color="neutral.50" fontWeight="700">🏆 Top Volunteers</Heading>
+                      <Badge bg="rgba(47, 212, 99, 0.1)" color="brand.500" fontSize="xs" px={2} py={1} border="1px solid" borderColor="brand.500">
                         {leaderboard.length} Active
                       </Badge>
                     </HStack>
@@ -434,7 +495,7 @@ const ProfilePage = () => {
                     {leaderboardLoading ? (
                       <VStack py={8}>
                         <Spinner size="lg" color="brand.500" />
-                        <Text color="gray.500">Loading leaderboard...</Text>
+                        <Text color="neutral.400">Loading leaderboard...</Text>
                       </VStack>
                     ) : (
                       <VStack spacing={3} align="stretch">
@@ -442,16 +503,16 @@ const ProfilePage = () => {
                           <HStack 
                             key={volunteer.user_id ? `${volunteer.user_id}-${volunteer.rank || index}` : `vol-${index}`}
                             p={4} 
-                            bg={index < 3 ? "brand.50" : "gray.50"} 
-                            borderRadius="lg"
-                            border={index < 3 ? "1px solid" : "none"}
-                            borderColor={index < 3 ? "brand.200" : "transparent"}
+                            bg={index < 3 ? "rgba(47, 212, 99, 0.08)" : "neutral.700"} 
+                            borderRadius="12px"
+                            border={index < 3 ? "1px solid" : "1px solid"}
+                            borderColor={index < 3 ? "brand.500" : "neutral.600"}
                           >
                             <VStack spacing={0} minW="40px">
                               <Text 
                                 fontSize="lg" 
-                                fontWeight="bold" 
-                                color={index === 0 ? "yellow.500" : index === 1 ? "gray.400" : index === 2 ? "orange.400" : "gray.600"}
+                                fontWeight="700" 
+                                color={index === 0 ? "yellow.400" : index === 1 ? "gray.300" : index === 2 ? "orange.400" : "neutral.400"}
                               >
                                 #{volunteer.rank}
                               </Text>
@@ -465,20 +526,22 @@ const ProfilePage = () => {
                             <Avatar 
                               name={volunteer.name} 
                               size="md"
-                              bg="brand.500"
-                              color="white"
+                              bg="rgba(47, 212, 99, 0.1)"
+                              border="2px solid"
+                              borderColor="brand.500"
+                              color="brand.500"
                             />
                             
                             <VStack align="start" spacing={0} flex={1}>
-                              <Text fontWeight="bold" color="gray.900">
+                              <Text fontWeight="600" color="neutral.50">
                                 {volunteer.name}
                               </Text>
                               <HStack spacing={2}>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="neutral.300">
                                   {volunteer.past_cleanup_count} cleanups
                                 </Text>
-                                <Text fontSize="sm" color="gray.400">•</Text>
-                                <Text fontSize="sm" color="gray.600">
+                                <Text fontSize="sm" color="neutral.400">•</Text>
+                                <Text fontSize="sm" color="neutral.300">
                                   {volunteer.experience_level}
                                 </Text>
                               </HStack>
@@ -486,13 +549,22 @@ const ProfilePage = () => {
                             
                             <VStack align="end" spacing={1}>
                               <Badge 
-                                colorScheme={index < 3 ? "yellow" : "gray"} 
+                                bg={index < 3 ? "rgba(250, 204, 21, 0.1)" : "neutral.600"}
+                                color={index < 3 ? "yellow.400" : "neutral.300"}
+                                border="1px solid"
+                                borderColor={index < 3 ? "yellow.500" : "neutral.500"}
                                 fontSize="xs"
                               >
                                 {volunteer.badge}
                               </Badge>
                               {volunteer.available && (
-                                <Badge colorScheme="green" variant="subtle" fontSize="xs">
+                                <Badge 
+                                  bg="rgba(72, 187, 120, 0.1)"
+                                  color="green.400"
+                                  border="1px solid"
+                                  borderColor="green.500"
+                                  fontSize="xs"
+                                >
                                   Available
                                 </Badge>
                               )}
@@ -501,9 +573,9 @@ const ProfilePage = () => {
                         ))}
                         
                         {leaderboard.length === 0 && (
-                          <Alert status="info">
-                            <AlertIcon />
-                            No volunteers found in the leaderboard.
+                          <Alert status="info" bg="rgba(66, 153, 225, 0.1)" borderRadius="12px" border="1px solid" borderColor="blue.500">
+                            <AlertIcon color="blue.400" />
+                            <Text color="neutral.200">No volunteers found in the leaderboard.</Text>
                           </Alert>
                         )}
                       </VStack>
