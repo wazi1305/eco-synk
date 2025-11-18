@@ -4,7 +4,7 @@ qdrant-client>=1.15.0
 sentence-transformers>=2.5.1
 
 ultralytics>=8.0.0
-opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
 torch>=2.0.0+cpu --index-url https://download.pytorch.org/whl/cpu
 torchvision>=0.15.0+cpu --index-url https://download.pytorch.org/whl/cpu
 

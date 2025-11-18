@@ -61,23 +61,35 @@ class CampaignService {
   }
 
   /**
-   * Create a cleanup campaign from hotspot data
-   * @param {Object} hotspotData - Hotspot detection results
-   * @param {Object} campaignDetails - Additional campaign information
+   * Create a cleanup campaign
+   * @param {Object} campaignData - Campaign information
    * @returns {Promise<Object>} Campaign creation result
    */
-  async createCampaign(hotspotData, campaignDetails = {}) {
+  async createCampaign(campaignData) {
     try {
       const requestBody = {
-        hotspot_report_ids: hotspotData.reportIds || [],
-        location: campaignDetails.location || hotspotData.location,
-        campaign_name: campaignDetails.name,
-        target_funding_usd: campaignDetails.targetFunding || 500,
-        volunteer_goal: campaignDetails.volunteerGoal || 10,
-        duration_days: campaignDetails.durationDays || 30
+        campaign_name: campaignData.campaign_name,
+        location: campaignData.location,
+        hotspot: campaignData.hotspot || {
+          report_count: 1,
+          report_ids: [],
+          average_priority: 5,
+          materials: ['mixed']
+        },
+        goals: {
+          target_funding_usd: campaignData.target_funding_usd || 500,
+          volunteer_goal: campaignData.volunteer_goal || 10
+        },
+        start_date: campaignData.start_date || new Date().toISOString(),
+        duration_days: campaignData.duration_days || 30,
+        impact_estimates: {
+          estimated_waste_kg: campaignData.estimated_waste_kg || 50,
+          estimated_volunteer_hours: (campaignData.volunteer_goal || 10) * 2,
+          estimated_co2_reduction_kg: (campaignData.estimated_waste_kg || 50) * 0.5
+        }
       };
 
-      const response = await fetch(`${API_BASE_URL}/campaign/create`, {
+      const response = await fetch(`${API_BASE_URL}/campaigns`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,8 +109,7 @@ class CampaignService {
       return {
         success: true,
         campaign: result.campaign,
-        message: result.message,
-        nextSteps: result.next_steps
+        message: result.message
       };
 
     } catch (error) {
@@ -455,6 +466,43 @@ class CampaignService {
     if (score >= 6) return 'High';
     if (score >= 4) return 'Medium';
     return 'Low';
+  }
+
+  /**
+   * Update campaign progress
+   * @param {string} campaignId - Campaign ID
+   * @param {Object} progress - Progress updates
+   * @returns {Promise<Object>} Update result
+   */
+  async updateCampaignProgress(campaignId, progress = {}) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/progress`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(progress),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Progress update failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      return {
+        success: true,
+        campaign: result.campaign,
+        message: result.message
+      };
+
+    } catch (error) {
+      console.error('Campaign Progress Update Error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
   }
 
   /**

@@ -6,7 +6,7 @@ Analyzes images to identify trash types, volumes, and cleanup priorities
 import json
 import base64
 from datetime import datetime
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from pathlib import Path
 
 import sys
