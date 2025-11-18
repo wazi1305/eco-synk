@@ -417,7 +417,7 @@ const ProfilePage = () => {
                       <VStack spacing={3} align="stretch">
                         {leaderboard.map((volunteer, index) => (
                           <HStack 
-                            key={volunteer.user_id ? ${volunteer.user_id}-${volunteer.rank || index} : vol-${index}}
+                            key={volunteer.user_id ? `${volunteer.user_id}-${volunteer.rank || index}` : `vol-${index}`}
                             p={4} 
                             bg={index < 3 ? "rgba(47, 212, 99, 0.08)" : "neutral.700"} 
                             borderRadius="12px"
