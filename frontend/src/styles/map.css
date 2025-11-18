@@ -1,7 +1,6 @@
 /* Leaflet Map Styles for EcoSynk */
 
-/* Base Leaflet CSS imports */
-@import 'leaflet/dist/leaflet.css';
+/* Base Leaflet CSS imports - removed due to missing dependency */
 
 /* Custom map styling */
 .leaflet-container {

@@ -28,6 +28,7 @@ import CampaignCard from './CampaignCard';
 import DonationModal from './DonationModal';
 import CampaignDetail from './CampaignDetail';
 import JoinCampaignModal from './JoinCampaignModal';
+import CreateCampaignForm from './CreateCampaignForm';
 import campaignService from '../../services/campaignService';
 import { normalizeCampaignForUI } from '../../utils/campaignFormatter';
 
@@ -87,6 +88,7 @@ const CampaignsPage = () => {
   const [showDonationModal, setShowDonationModal] = useState(false);
   const [showCampaignDetail, setShowCampaignDetail] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [showHeader, setShowHeader] = useState(true);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -252,6 +254,15 @@ const CampaignsPage = () => {
     setShowDonationModal(false);
   };
 
+  const handleCampaignCreated = (newCampaign) => {
+    // Add new campaign to the list
+    const normalizedCampaign = normalizeCampaignForUI(newCampaign);
+    setCampaigns(prev => [normalizedCampaign, ...prev]);
+    
+    // Refresh campaigns to get latest data
+    loadCampaigns({ forceRefresh: true });
+  };
+
   return (
     <Flex direction="column" h="full" bg="gray.50" overflow="hidden" className="safe-area-inset">
       {/* Header - Collapsible */}
@@ -375,19 +386,28 @@ const CampaignsPage = () => {
               )}
             </HStack>
 
-            <Button
-              size="sm"
-              variant="outline"
-              colorScheme="whiteAlpha"
-              leftIcon={<FiRefreshCw />}
-              onClick={handleRefresh}
-              isLoading={isRefreshing}
-              loadingText="Refreshing"
-              borderRadius="full"
-              alignSelf={{ base: 'stretch', md: 'center' }}
-            >
-              Refresh
-            </Button>
+            <HStack spacing={2}>
+              <Button
+                size="sm"
+                colorScheme="whiteAlpha"
+                onClick={() => setShowCreateForm(true)}
+                borderRadius="full"
+              >
+                + Create
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                colorScheme="whiteAlpha"
+                leftIcon={<FiRefreshCw />}
+                onClick={handleRefresh}
+                isLoading={isRefreshing}
+                loadingText="Refreshing"
+                borderRadius="full"
+              >
+                Refresh
+              </Button>
+            </HStack>
           </Flex>
         </VStack>
       </Box>
@@ -473,6 +493,13 @@ const CampaignsPage = () => {
           onClose={() => setShowCampaignDetail(false)}
         />
       )}
+
+      {/* Create Campaign Form */}
+      <CreateCampaignForm
+        isOpen={showCreateForm}
+        onClose={() => setShowCreateForm(false)}
+        onSuccess={handleCampaignCreated}
+      />
     </Flex>
   );
 };

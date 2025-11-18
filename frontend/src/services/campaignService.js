@@ -61,23 +61,35 @@ class CampaignService {
   }
 
   /**
-   * Create a cleanup campaign from hotspot data
-   * @param {Object} hotspotData - Hotspot detection results
-   * @param {Object} campaignDetails - Additional campaign information
+   * Create a cleanup campaign
+   * @param {Object} campaignData - Campaign information
    * @returns {Promise<Object>} Campaign creation result
    */
-  async createCampaign(hotspotData, campaignDetails = {}) {
+  async createCampaign(campaignData) {
     try {
       const requestBody = {
-        hotspot_report_ids: hotspotData.reportIds || [],
-        location: campaignDetails.location || hotspotData.location,
-        campaign_name: campaignDetails.name,
-        target_funding_usd: campaignDetails.targetFunding || 500,
-        volunteer_goal: campaignDetails.volunteerGoal || 10,
-        duration_days: campaignDetails.durationDays || 30
+        campaign_name: campaignData.campaign_name,
+        location: campaignData.location,
+        hotspot: campaignData.hotspot || {
+          report_count: 1,
+          report_ids: [],
+          average_priority: 5,
+          materials: ['mixed']
+        },
+        goals: {
+          target_funding_usd: campaignData.target_funding_usd || 500,
+          volunteer_goal: campaignData.volunteer_goal || 10
+        },
+        start_date: campaignData.start_date || new Date().toISOString(),
+        duration_days: campaignData.duration_days || 30,
+        impact_estimates: {
+          estimated_waste_kg: campaignData.estimated_waste_kg || 50,
+          estimated_volunteer_hours: (campaignData.volunteer_goal || 10) * 2,
+          estimated_co2_reduction_kg: (campaignData.estimated_waste_kg || 50) * 0.5
+        }
       };
 
-      const response = await fetch(`${API_BASE_URL}/campaign/create`, {
+      const response = await fetch(`${API_BASE_URL}/campaigns`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,8 +109,7 @@ class CampaignService {
       return {
         success: true,
         campaign: result.campaign,
-        message: result.message,
-        nextSteps: result.next_steps
+        message: result.message
       };
 
     } catch (error) {
@@ -157,10 +168,14 @@ class CampaignService {
         };
       }
 
+      // Return mock data when API is unavailable
+      const mockCampaigns = this.getMockCampaigns();
       return {
-        success: false,
-        error: error.message,
-        campaigns: []
+        success: true,
+        campaigns: mockCampaigns,
+        count: mockCampaigns.length,
+        source: 'mock-data',
+        warning: 'Using demo data - API unavailable'
       };
     }
   }
@@ -454,6 +469,43 @@ class CampaignService {
   }
 
   /**
+   * Update campaign progress
+   * @param {string} campaignId - Campaign ID
+   * @param {Object} progress - Progress updates
+   * @returns {Promise<Object>} Update result
+   */
+  async updateCampaignProgress(campaignId, progress = {}) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/campaigns/${campaignId}/progress`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(progress),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Progress update failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      return {
+        success: true,
+        campaign: result.campaign,
+        message: result.message
+      };
+
+    } catch (error) {
+      console.error('Campaign Progress Update Error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Store campaign locally for offline access
    * @private
    */
@@ -492,6 +544,114 @@ class CampaignService {
       console.warn('Failed to load cached campaigns:', error);
       return [];
     }
+  }
+
+  /**
+   * Get mock campaigns for demo purposes
+   * @returns {Array} Mock campaign data
+   */
+  getMockCampaigns() {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const nextMonth = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    return [
+      {
+        id: 'demo-campaign-1',
+        title: 'Dubai Marina Beach Cleanup',
+        description: 'Join us for a comprehensive beach cleanup at Dubai Marina',
+        status: 'active',
+        location: {
+          address: 'Dubai Marina Beach, Dubai, UAE',
+          lat: 25.0657,
+          lng: 55.1413
+        },
+        date: tomorrow.toISOString(),
+        organizer: {
+          name: 'EcoSynk Community',
+          avatar: '🌊'
+        },
+        volunteers: [
+          { name: 'Ahmed Al-Rashid', avatar: '👨' },
+          { name: 'Sarah Johnson', avatar: '👩' },
+          { name: 'Omar Hassan', avatar: '👨' }
+        ],
+        volunteerGoal: 15,
+        funding: {
+          current: 750,
+          goal: 1200
+        },
+        esgImpact: {
+          itemsCollected: 0,
+          wasteKg: 25,
+          co2Reduced: 12.5
+        },
+        difficulty: 'Medium',
+        image: '🏖️'
+      },
+      {
+        id: 'demo-campaign-2',
+        title: 'Al Barsha Park Plastic Drive',
+        description: 'Focus on plastic waste removal and recycling education',
+        status: 'active',
+        location: {
+          address: 'Al Barsha Park, Dubai, UAE',
+          lat: 25.1048,
+          lng: 55.1952
+        },
+        date: nextWeek.toISOString(),
+        organizer: {
+          name: 'Green Dubai Initiative',
+          avatar: '🌱'
+        },
+        volunteers: [
+          { name: 'Fatima Al-Zahra', avatar: '👩' },
+          { name: 'John Smith', avatar: '👨' }
+        ],
+        volunteerGoal: 10,
+        funding: {
+          current: 400,
+          goal: 800
+        },
+        esgImpact: {
+          itemsCollected: 0,
+          wasteKg: 15,
+          co2Reduced: 7.5
+        },
+        difficulty: 'Easy',
+        image: '♻️'
+      },
+      {
+        id: 'demo-campaign-3',
+        title: 'Downtown Dubai Street Cleanup',
+        description: 'Urban cleanup focusing on high-traffic areas',
+        status: 'active',
+        location: {
+          address: 'Downtown Dubai, UAE',
+          lat: 25.1972,
+          lng: 55.2744
+        },
+        date: nextMonth.toISOString(),
+        organizer: {
+          name: 'Dubai Municipality',
+          avatar: '🏢'
+        },
+        volunteers: [],
+        volunteerGoal: 20,
+        funding: {
+          current: 200,
+          goal: 1500
+        },
+        esgImpact: {
+          itemsCollected: 0,
+          wasteKg: 40,
+          co2Reduced: 20
+        },
+        difficulty: 'Hard',
+        image: '🏙️'
+      }
+    ];
   }
 
   /**

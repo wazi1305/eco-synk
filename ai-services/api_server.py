@@ -26,6 +26,8 @@ from gemini.trash_analyzer import TrashAnalyzer
 from qdrant.vector_store import EcoSynkVectorStore
 from embeddings.generator import EmbeddingGenerator
 from yolo.waste_detector import WasteDetector
+from campaigns import CampaignManager
+=======
 from geocoding import reverse_geocode
 
 
@@ -131,6 +133,8 @@ analyzer: Optional[TrashAnalyzer] = None
 vector_store: Optional[EcoSynkVectorStore] = None
 embedder: Optional[EmbeddingGenerator] = None
 waste_detector: Optional[WasteDetector] = None
+campaign_manager: Optional[CampaignManager] = None
+
 
 
 def _normalize_payload_location(payload: Optional[Dict[str, Any]]) -> Optional[Dict[str, float]]:
@@ -232,7 +236,10 @@ def _enrich_location(raw_location: Optional[Dict[str, Any]]) -> Optional[Dict[st
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
+
     global analyzer, vector_store, embedder, waste_detector
+    global analyzer, vector_store, embedder, campaign_manager
+
     
     print("\n" + "=" * 60)
     print("🚀 Starting EcoSynk AI Services")
@@ -279,6 +286,7 @@ async def startup_event():
         print(f"  ⚠️  Gemini failed: {e}")
         analyzer = None
     
+
     # YOLOv8 Waste Detector
     try:
         print("  → Loading YOLOv8 waste detector...")
@@ -295,6 +303,20 @@ async def startup_event():
         print(f"  ⚠️  YOLO detector failed: {e}")
         print("  ⚠️  Will use Gemini-only analysis")
         waste_detector = None
+
+    # Campaign Manager
+    try:
+        if vector_store and embedder:
+            print("  → Initializing Campaign Manager...")
+            campaign_manager = CampaignManager(vector_store, embedder)
+            print("  ✅ Campaign Manager ready")
+        else:
+            print("  ⚠️  Campaign Manager requires vector store and embedder")
+            campaign_manager = None
+    except Exception as e:
+        print(f"  ⚠️  Campaign Manager failed: {e}")
+        campaign_manager = None
+
     
     print("\n✅ Server startup complete!")
     print(f"📡 API endpoints available at http://{settings.api_host}:{settings.api_port}")
@@ -324,7 +346,8 @@ async def root():
             "health": "/health",
             "analyze": "/analyze-trash",
             "volunteers": "/find-volunteers",
-            "hotspots": "/detect-hotspots"
+            "hotspots": "/detect-hotspots",
+            "campaigns": "/campaigns"
         }
     }
 
