@@ -28,6 +28,7 @@ import {
   Spinner
 } from '@chakra-ui/react';
 import campaignService from '../../services/campaignService';
+import LocationAutocomplete from './LocationAutocomplete';
 
 const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -270,9 +271,13 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
               <FormControl>
                 <FormLabel>Location</FormLabel>
                 <VStack spacing={2} align="stretch">
-                  <Input
+                  <LocationAutocomplete
                     value={locationName}
-                    onChange={(e) => setLocationName(e.target.value)}
+                    onChange={setLocationName}
+                    onLocationSelect={(location) => {
+                      handleInputChange('location', { lat: location.lat, lon: location.lon });
+                      setLocationName(location.address);
+                    }}
                     placeholder="Enter campaign location..."
                   />
                   <Button
