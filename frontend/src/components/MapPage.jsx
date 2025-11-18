@@ -165,12 +165,12 @@ const MapPage = () => {
         <IconButton
           icon={<FiMinimize2 />}
           position="absolute"
-          top="20px"
-          right="20px"
+          top={{ base: "10px", md: "20px" }}
+          left={{ base: "10px", md: "20px" }}
           zIndex="1500"
           colorScheme="red"
           variant="solid"
-          size="md"
+          size={{ base: "sm", md: "md" }}
           borderRadius="full"
           boxShadow="xl"
           onClick={toggleFullscreen}
@@ -201,18 +201,18 @@ const MapPage = () => {
       minH="calc(100vh - 80px)" // Minimum height to fill screen minus nav
       overflowX="hidden"
       pb="80px" // Account for bottom navigation
-      px={4}
-      py={6}
+      px={{ base: 2, md: 4 }}
+      py={{ base: 3, md: 6 }}
     >
-      <VStack spacing={6} align="stretch" maxW="container.xl" mx="auto">
+      <VStack spacing={{ base: 4, md: 6 }} align="stretch" maxW="container.xl" mx="auto">
         {/* Header */}
         <Box>
-          <HStack justify="space-between" align={{ base: 'flex-start', md: 'center' }} spacing={4} flexWrap="wrap">
-            <Box>
-              <Heading size="lg" mb={1}>
+          <HStack justify="space-between" align={{ base: 'flex-start', md: 'center' }} spacing={{ base: 2, md: 4 }} flexWrap="wrap">
+            <Box flex={1}>
+              <Heading size={{ base: 'md', md: 'lg' }} mb={1}>
                 Campaign Map
               </Heading>
-              <Text color="gray.600">
+              <Text color="gray.600" fontSize={{ base: 'sm', md: 'md' }} display={{ base: 'none', md: 'block' }}>
                 Discover cleanup campaigns in your area and join the environmental movement
               </Text>
             </Box>
@@ -261,22 +261,22 @@ const MapPage = () => {
         )}
 
         {/* Stats */}
-        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-          <Stat bg="white" p={4} borderRadius="lg" boxShadow="sm">
-            <StatLabel>Total Campaigns</StatLabel>
-            <StatNumber color="brand.600">{stats.total}</StatNumber>
+        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: 2, md: 4 }}>
+          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Total Campaigns</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="brand.600">{stats.total}</StatNumber>
           </Stat>
-          <Stat bg="white" p={4} borderRadius="lg" boxShadow="sm">
-            <StatLabel>Active</StatLabel>
-            <StatNumber color="green.600">{stats.active}</StatNumber>
+          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Active</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="green.600">{stats.active}</StatNumber>
           </Stat>
-          <Stat bg="white" p={4} borderRadius="lg" boxShadow="sm">
-            <StatLabel>Volunteers</StatLabel>
-            <StatNumber color="blue.600">{stats.volunteers}</StatNumber>
+          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Volunteers</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="blue.600">{stats.volunteers}</StatNumber>
           </Stat>
-          <Stat bg="white" p={4} borderRadius="lg" boxShadow="sm">
-            <StatLabel>Funding</StatLabel>
-            <StatNumber color="purple.600">AED {Math.round(stats.funding / 1000)}K</StatNumber>
+          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Funding</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="purple.600">AED {Math.round(stats.funding / 1000)}K</StatNumber>
           </Stat>
         </SimpleGrid>
 
@@ -284,29 +284,30 @@ const MapPage = () => {
         <Card>
           <CardBody p={0} position="relative">
             {/* Map header with fullscreen button */}
-            <HStack justify="space-between" p={4} borderBottom="1px solid" borderColor="gray.200">
+            <HStack justify="space-between" p={{ base: 2, md: 4 }} borderBottom="1px solid" borderColor="gray.200">
               <HStack spacing={2}>
                 <FiMapPin />
-                <Text fontWeight="semibold">Campaign Locations</Text>
-                <Badge colorScheme="brand" variant="subtle">
+                <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Campaign Locations</Text>
+                <Badge colorScheme="brand" variant="subtle" fontSize={{ base: 'xs', md: 'sm' }}>
                   {campaigns.length} locations
                 </Badge>
                 {isRefreshing && <Spinner size="sm" color="brand.500" ml={2} />}
               </HStack>
               <Button
                 leftIcon={<FiMaximize2 />}
-                size="sm"
+                size={{ base: 'xs', md: 'sm' }}
                 variant="outline"
                 colorScheme="brand"
                 onClick={toggleFullscreen}
               >
-                Fullscreen
+                <Text display={{ base: 'none', md: 'inline' }}>Fullscreen</Text>
+                <Text display={{ base: 'inline', md: 'none' }}>Full</Text>
               </Button>
             </HStack>
             
             {/* Map container - smaller height for normal view */}
             <Box 
-              height="350px" 
+              height={{ base: '250px', md: '350px', lg: '400px' }} 
               position="relative"
               overflow="hidden"
               borderBottomRadius="md"
@@ -327,28 +328,28 @@ const MapPage = () => {
         {/* Selected Campaign Details */}
         {selectedCampaign && (
           <Card>
-            <CardBody>
-              <VStack spacing={4} align="stretch">
-                <HStack justify="space-between">
-                  <HStack spacing={3}>
-                    <Text fontSize="2xl">{selectedCampaign.image}</Text>
+            <CardBody p={{ base: 3, md: 4 }}>
+              <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+                <HStack justify="space-between" flexWrap="wrap" gap={2}>
+                  <HStack spacing={{ base: 2, md: 3 }} flex={1}>
+                    <Text fontSize={{ base: 'xl', md: '2xl' }}>{selectedCampaign.image}</Text>
                     <VStack align="start" spacing={1}>
-                      <Heading size="md">{selectedCampaign.title}</Heading>
-                      <Text color="gray.600" fontSize="sm">
+                      <Heading size={{ base: 'sm', md: 'md' }}>{selectedCampaign.title}</Heading>
+                      <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>
                         {selectedCampaign.location.address}
                       </Text>
                     </VStack>
                   </HStack>
-                  <Badge colorScheme="brand" variant="solid">
+                  <Badge colorScheme="brand" variant="solid" fontSize={{ base: 'xs', md: 'sm' }}>
                     {selectedCampaign.difficulty}
                   </Badge>
                 </HStack>
 
-                <Text color="gray.700">
+                <Text color="gray.700" fontSize={{ base: 'sm', md: 'md' }}>
                   {selectedCampaign.description}
                 </Text>
 
-                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
+                <SimpleGrid columns={{ base: 1, md: 3 }} spacing={{ base: 2, md: 4 }}>
                   <HStack spacing={2}>
                     <FiCalendar />
                     <Text fontSize="sm">
@@ -373,11 +374,11 @@ const MapPage = () => {
                   </HStack>
                 </SimpleGrid>
 
-                <HStack spacing={3}>
-                  <Button colorScheme="brand" size="sm" flex={1}>
+                <HStack spacing={{ base: 2, md: 3 }} flexDirection={{ base: 'column', sm: 'row' }}>
+                  <Button colorScheme="brand" size={{ base: 'md', md: 'sm' }} flex={1} w={{ base: 'full', sm: 'auto' }} minH="44px">
                     Join Campaign
                   </Button>
-                  <Button variant="outline" size="sm" flex={1}>
+                  <Button variant="outline" size={{ base: 'md', md: 'sm' }} flex={1} w={{ base: 'full', sm: 'auto' }} minH="44px">
                     View Details
                   </Button>
                 </HStack>

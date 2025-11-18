@@ -73,27 +73,7 @@ const LocationButton = ({ onLocationUpdate, userLocation, loading }) => {
       );
     }
 
-    if (userLocation) {
-      return (
-        <Alert 
-          status="success" 
-          position="absolute" 
-          top="16px" 
-          left="16px" 
-          w="auto" 
-          borderRadius="lg" 
-          boxShadow="md"
-          zIndex={1000}
-          bg="white"
-        >
-          <AlertIcon />
-          <Text fontSize="sm">
-            Location: {userLocation.name || 'Current position'}
-          </Text>
-        </Alert>
-      );
-    }
-
+    // Removed location display box - no longer showing current location
     return null;
   };
 

@@ -216,12 +216,13 @@ class EcoSynkVectorStore:
             
             # Note: Time filtering done in post-processing because timestamps are strings
             # Qdrant's Range filter requires numeric fields
-            results = self.client.search(
+            from qdrant_client.models import QueryRequest
+            results = self.client.query_points(
                 collection_name=settings.trash_reports_collection,
-                query_vector=embedding,
+                query=embedding,
                 limit=limit * 2,  # Get more results for post-filtering
                 score_threshold=score_threshold
-            )
+            ).points
             
             # Format results and apply time filter in post-processing
             formatted_results = []
@@ -374,13 +375,13 @@ class EcoSynkVectorStore:
             
             query_filter = Filter(must=conditions) if conditions else None
             
-            results = self.client.search(
+            results = self.client.query_points(
                 collection_name=settings.volunteer_profiles_collection,
-                query_vector=task_embedding,
+                query=task_embedding,
                 limit=limit,
                 score_threshold=min_match_score,
                 query_filter=query_filter
-            )
+            ).points
             
             # Format results and filter by distance (post-processing)
             import math

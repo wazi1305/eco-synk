@@ -2,8 +2,12 @@
 google-generativeai>=0.8.0
 qdrant-client>=1.15.0
 sentence-transformers>=2.5.1
+
+ultralytics>=8.0.0
+opencv-python>=4.8.0
 torch>=2.0.0+cpu --index-url https://download.pytorch.org/whl/cpu
 torchvision>=0.15.0+cpu --index-url https://download.pytorch.org/whl/cpu
+
 
 # Web Framework
 fastapi>=0.109.0
@@ -17,6 +21,7 @@ pydantic-settings>=2.1.0
 httpx>=0.26.0
 pillow>=10.2.0
 numpy>=1.24.3
+torch>=2.0.0
 
 # Development & Testing
 pytest>=7.4.3

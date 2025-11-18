@@ -489,21 +489,22 @@ const FeedPage = () => {
   };
 
   const ActivityCard = ({ activity }) => (
-    <Card variant="outline" _hover={{ shadow: 'md' }} transition="all 0.2s">
+    <Card variant="outline" _hover={{ shadow: 'md' }} transition="all 0.2s" mb={{ base: 3, md: 4 }}>
       <CardBody p={0}>
         {/* Activity Header */}
-        <HStack spacing={3} p={4} pb={3}>
+        <HStack spacing={{ base: 2, md: 3 }} p={{ base: 3, md: 4 }} pb={3}>
           <Avatar 
-            size="md" 
+            size={{ base: 'sm', md: 'md' }} 
             name={activity.user.name}
             cursor="pointer"
             _hover={{ ring: 2, ringColor: 'brand.500' }}
             onClick={() => openProfile(activity.user)}
           />
           <VStack align="start" spacing={0} flex={1}>
-            <HStack spacing={2}>
+            <HStack spacing={2} flexWrap="wrap">
               <Text 
-                fontWeight="semibold" 
+                fontWeight="semibold"
+                fontSize={{ base: 'sm', md: 'md' }}
                 cursor="pointer"
                 _hover={{ color: 'brand.600' }}
                 onClick={() => openProfile(activity.user)}
@@ -538,9 +539,9 @@ const FeedPage = () => {
         </HStack>
 
         {/* Activity Content */}
-        <Box px={4} pb={3}>
-          <Heading size="md" mb={2}>{activity.title}</Heading>
-          <Text color="gray.700" mb={3}>{activity.description}</Text>
+        <Box px={{ base: 3, md: 4 }} pb={3}>
+          <Heading size={{ base: 'sm', md: 'md' }} mb={2}>{activity.title}</Heading>
+          <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.700" mb={3}>{activity.description}</Text>
           
           {/* Activity Images */}
           {activity.images && (
@@ -566,7 +567,7 @@ const FeedPage = () => {
 
           {/* Activity Stats */}
           {activity.stats && (
-            <Grid templateColumns="repeat(3, 1fr)" gap={3} mb={4}>
+            <Grid templateColumns={{ base: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }} gap={{ base: 2, md: 3 }} mb={4}>
               {Object.entries(activity.stats)
                 .filter(([, value]) => value !== null && value !== undefined)
                 .slice(0, 3)
@@ -620,21 +621,22 @@ const FeedPage = () => {
         <Divider />
 
         {/* Action Buttons */}
-        <HStack spacing={0} p={3}>
+        <HStack spacing={0} p={{ base: 2, md: 3 }}>
           <Button
             leftIcon={<FiHeart />}
             variant="ghost"
-            size="sm"
+            size={{ base: 'sm', md: 'md' }}
             flex={1}
+            minH={{ base: '44px', md: 'auto' }}
             color={likedPosts.has(activity.id) ? 'red.500' : 'gray.600'}
             onClick={() => toggleLike(activity.id)}
           >
             {activity.likes + (likedPosts.has(activity.id) ? 1 : 0)}
           </Button>
-          <Button leftIcon={<FiMessageCircle />} variant="ghost" size="sm" flex={1} color="gray.600">
+          <Button leftIcon={<FiMessageCircle />} variant="ghost" size={{ base: 'sm', md: 'md' }} flex={1} minH={{ base: '44px', md: 'auto' }} color="gray.600">
             {activity.comments}
           </Button>
-          <Button leftIcon={<FiShare2 />} variant="ghost" size="sm" flex={1} color="gray.600">
+          <Button leftIcon={<FiShare2 />} variant="ghost" size={{ base: 'sm', md: 'md' }} flex={1} minH={{ base: '44px', md: 'auto' }} color="gray.600">
             Share
           </Button>
         </HStack>
@@ -659,7 +661,7 @@ const FeedPage = () => {
       >
         <VStack spacing={0}>
           {/* Main Header */}
-          <HStack justify="space-between" p={4} w="full" maxW="600px" mx="auto">
+          <HStack justify="space-between" p={{ base: 3, md: 4 }} w="full" maxW="800px" mx="auto">
             <VStack align="start" spacing={1}>
               <Heading size="lg" color="brand.600">Feed</Heading>
               <Text fontSize="sm" color="gray.600">
@@ -682,9 +684,9 @@ const FeedPage = () => {
           </HStack>
 
           {/* Today's Impact Bar */}
-          <Box w="full" bg="gradient.primary" px={4} py={3}>
-            <Box maxW="600px" mx="auto">
-              <HStack justify="space-between" color="white" fontSize="xs">
+          <Box w="full" bg="gradient.primary" px={{ base: 2, md: 4 }} py={3}>
+            <Box maxW="800px" mx="auto">
+              <HStack justify="space-around" color="white" fontSize={{ base: 'xs', md: 'sm' }} spacing={{ base: 1, md: 4 }}>
                 <VStack spacing={0}>
                   <Text fontWeight="bold">{todayImpact.participants}</Text>
                   <Text opacity={0.9}>Active</Text>
@@ -706,13 +708,13 @@ const FeedPage = () => {
           </Box>
 
           {/* Feed Tabs */}
-          <Box w="full" maxW="600px" mx="auto">
-            <Tabs index={activeTab} onChange={setActiveTab} variant="enclosed-colored">
+          <Box w="full" maxW="800px" mx="auto" px={{ base: 2, md: 4 }}>
+            <Tabs index={activeTab} onChange={setActiveTab} variant="enclosed-colored" size={{ base: 'sm', md: 'md' }}>
               <TabList>
-                <Tab flex={1}>Following</Tab>
-                <Tab flex={1}>Local</Tab>
-                <Tab flex={1}>Trending</Tab>
-                <Tab flex={1}>Challenges</Tab>
+                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Following</Tab>
+                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Local</Tab>
+                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Trending</Tab>
+                <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Challenges</Tab>
               </TabList>
             </Tabs>
             {(metadata.campaigns || metadata.volunteers || metadata.reports || lastUpdated) && (
@@ -747,9 +749,9 @@ const FeedPage = () => {
       <Box
         ref={scrollRef}
         onScroll={handleScroll}
-        pt="200px"
-        px={4}
-        maxW="600px"
+        pt={{ base: '180px', md: '200px' }}
+        px={{ base: 2, md: 4 }}
+        maxW="800px"
         mx="auto"
         overflowY="auto"
         h="100vh"

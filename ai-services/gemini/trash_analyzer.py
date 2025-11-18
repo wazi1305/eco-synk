@@ -48,11 +48,21 @@ class TrashAnalyzer:
         self.model = genai.GenerativeModel(settings.gemini_model)
         print(f"✅ Gemini analyzer initialized with model: {settings.gemini_model}")
     
-    def _create_analysis_prompt(self) -> str:
+    def _create_analysis_prompt(self, yolo_detections: Optional[List[Dict[str, Any]]] = None) -> str:
         """Create the structured prompt for trash analysis"""
-        return """
+        
+        base_prompt = """
 Analyze this image for trash, waste, or pollution. You are an expert environmental analyst.
-
+"""
+        
+        # Add YOLO detection context if available
+        if yolo_detections:
+            detection_context = "\n\n🤖 COMPUTER VISION DETECTIONS (YOLOv8):\n"
+            detection_context += json.dumps(yolo_detections, indent=2)
+            detection_context += "\n\nUse these detections to enhance your analysis. Verify the detected items, provide additional context about materials and environmental impact.\n"
+            base_prompt += detection_context
+        
+        base_prompt += """
 Return ONLY a valid JSON object with this exact structure (no markdown, no additional text):
 
 {
@@ -80,12 +90,14 @@ Important:
 - Be specific about items you can identify
 - Consider safety requirements in equipment recommendations
 """
+        return base_prompt
     
     def analyze_trash_image(
         self, 
         image_path: str, 
         location: Optional[Dict[str, float]] = None,
-        user_notes: Optional[str] = None
+        user_notes: Optional[str] = None,
+        yolo_detections: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
         """
         Analyze a trash image and return structured data
@@ -94,6 +106,7 @@ Important:
             image_path: Path to the image file
             location: Optional dict with 'lat' and 'lon' keys
             user_notes: Optional user-provided context
+            yolo_detections: Optional YOLOv8 detection results for enhanced analysis
             
         Returns:
             Dict containing analysis results with metadata
@@ -108,8 +121,8 @@ Important:
             with open(image_path, 'rb') as f:
                 image_data = f.read()
             
-            # Prepare prompt
-            prompt = self._create_analysis_prompt()
+            # Prepare prompt with YOLO context if available
+            prompt = self._create_analysis_prompt(yolo_detections=yolo_detections)
             if user_notes:
                 prompt += f"\n\nUser notes: {user_notes}"
             

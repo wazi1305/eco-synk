@@ -48,6 +48,10 @@ const CameraPage = () => {
   const [volunteerMatches, setVolunteerMatches] = useState([]);
   const [hotspotData, setHotspotData] = useState(null);
   const [location, setLocation] = useState(null);
+  const [videoDevices, setVideoDevices] = useState([]);
+  const [selectedDeviceId, setSelectedDeviceId] = useState(null);
+  const [detections, setDetections] = useState([]);
+  const [annotatedImage, setAnnotatedImage] = useState(null);
   const lastScrollYRef = useRef(0);
   const scrollTimeoutRef = useRef(null);
   const toast = useToast();
@@ -89,13 +93,25 @@ const CameraPage = () => {
     const checkCamera = async () => {
       try {
         const devices = await navigator.mediaDevices.enumerateDevices();
-        const videoDevices = devices.filter(device => device.kind === 'videoinput');
-        if (videoDevices.length === 0) {
+        const videoInputs = devices.filter(device => device.kind === 'videoinput');
+        setVideoDevices(videoInputs);
+        
+        if (videoInputs.length === 0) {
           setCameraError('No camera device found');
           setUseFileUpload(true);
+        } else {
+          // Prefer back camera on mobile (environment facing)
+          const backCamera = videoInputs.find(device => 
+            device.label.toLowerCase().includes('back') || 
+            device.label.toLowerCase().includes('rear') ||
+            device.label.toLowerCase().includes('environment')
+          );
+          
+          setSelectedDeviceId(backCamera?.deviceId || videoInputs[0]?.deviceId);
         }
       } catch (err) {
         console.error('Error checking camera:', err);
+        setUseFileUpload(true);
       }
     };
     
@@ -158,34 +174,60 @@ const CameraPage = () => {
   };
 
   const handleFileUpload = (event) => {
+    console.log('handleFileUpload called!', event);
     const file = event.target.files?.[0];
+    console.log('Selected file:', file);
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setCameraError('Please select an image file');
+    console.log('File type:', file.type, 'Size:', file.size);
+    
+    if (file.size > 15 * 1024 * 1024) {
+      const errorMsg = `Image file is too large: ${(file.size / 1024 / 1024).toFixed(2)}MB (max 15MB)`;
+      console.error(errorMsg);
+      setCameraError(errorMsg);
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setCameraError('Image file is too large (max 5MB)');
+    // Accept common image formats, including HEIC which may have empty type
+    if (file.type && !file.type.startsWith('image/')) {
+      const errorMsg = `Invalid file type: ${file.type}. Please select an image file.`;
+      console.error(errorMsg);
+      setCameraError(errorMsg);
       return;
     }
 
+    console.log('Starting FileReader...');
     const reader = new FileReader();
     reader.onload = (e) => {
+      console.log('FileReader onload triggered');
       if (e.target?.result) {
+        console.log('FileReader loaded, setting capturedImage, length:', e.target.result.length);
         setCapturedImage(e.target.result);
         setCameraError(null);
+        console.log('capturedImage should be set, component should re-render');
+      } else {
+        console.error('FileReader result is empty');
       }
     };
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error);
       setCameraError('Failed to read file');
     };
     reader.readAsDataURL(file);
+    console.log('FileReader.readAsDataURL() called');
   };
 
   const triggerFileUpload = () => {
-    fileInputRef.current?.click();
+    console.log('triggerFileUpload called', fileInputRef.current);
+    if (fileInputRef.current) {
+      // Reset value to allow selecting the same file again
+      fileInputRef.current.value = '';
+      console.log('About to click file input');
+      fileInputRef.current.click();
+      console.log('File input clicked');
+    } else {
+      console.error('fileInputRef.current is null!');
+    }
   };
 
   const retake = () => {
@@ -193,6 +235,8 @@ const CameraPage = () => {
     setAnalysisResult(null);
     setSubmitted(false);
     setCameraError(null);
+    setDetections([]);
+    setAnnotatedImage(null);
   };
 
   const submitReport = async () => {
@@ -202,6 +246,8 @@ const CameraPage = () => {
     setAnalysisResult(null);
     setVolunteerMatches([]);
     setHotspotData(null);
+    setDetections([]);
+    setAnnotatedImage(null);
 
     try {
       // Convert base64 to File object for the API
@@ -209,19 +255,40 @@ const CameraPage = () => {
       const blob = await response.blob();
       const file = new File([blob], 'trash-image.jpg', { type: 'image/jpeg' });
 
-      // Analyze image with AI
-      const analysisResponse = await aiAnalysisService.analyzeTrashImage(
+      // Use YOLO detection endpoint instead of basic analyze
+      const analysisResponse = await aiAnalysisService.detectWaste(
         file,
         location,
-        userNotes || null
+        userNotes || null,
+        true // use_yolo = true
       );
 
       if (!analysisResponse.success) {
-        throw new Error(analysisResponse.error || 'Analysis failed');
+        throw new Error(analysisResponse.error || 'Detection failed');
       }
 
       const analysisData = analysisResponse.data;
-      setAnalysisResult(analysisData);
+      console.log('Analysis response data:', {
+        hasAnalysis: !!analysisData.analysis,
+        hasDetections: !!analysisData.detections,
+        detectionsCount: analysisData.detections?.length || 0,
+        hasAnnotatedImage: !!analysisData.annotated_image,
+        annotatedImagePreview: analysisData.annotated_image?.substring(0, 50)
+      });
+      
+      setAnalysisResult(analysisData.analysis || analysisData);
+      
+      // Store YOLO detections and annotated image
+      if (analysisData.detections) {
+        console.log('Setting detections:', analysisData.detections.length);
+        setDetections(analysisData.detections);
+      }
+      if (analysisData.annotated_image) {
+        console.log('Setting annotated image, length:', analysisData.annotated_image.length);
+        setAnnotatedImage(analysisData.annotated_image);
+      } else {
+        console.warn('No annotated image in response!');
+      }
 
       // Check for hotspot if location is available
       if (location) {
@@ -246,9 +313,15 @@ const CameraPage = () => {
 
       setSubmitted(true);
       
+      const detectionCount = analysisData.detections?.length || 0;
+      const primaryMaterial = analysisData.analysis?.primary_material || analysisData.primary_material;
+      const priorityScore = analysisData.analysis?.cleanup_priority_score || analysisData.cleanup_priority_score;
+      
       toast({
-        title: 'Analysis complete',
-        description: `Found ${analysisData.primary_material} waste with priority ${analysisData.cleanup_priority_score}/10`,
+        title: 'Detection complete',
+        description: detectionCount > 0 
+          ? `Detected ${detectionCount} waste items with priority ${priorityScore}/10`
+          : `Found ${primaryMaterial} waste with priority ${priorityScore}/10`,
         status: 'success',
         duration: 4000,
         isClosable: true,
@@ -292,6 +365,8 @@ const CameraPage = () => {
     setUserNotes('');
     setVolunteerMatches([]);
     setHotspotData(null);
+    setDetections([]);
+    setAnnotatedImage(null);
   };
 
   return (
@@ -355,6 +430,7 @@ const CameraPage = () => {
         pt={showHeader ? "140px" : "80px"}
         transition="padding-top 0.4s ease-out"
       >
+        {console.log('Render check - capturedImage:', capturedImage ? 'SET' : 'NULL', 'submitted:', submitted, 'isAnalyzing:', isAnalyzing)}
         {!capturedImage ? (
           <>
             {useFileUpload ? (
@@ -409,7 +485,8 @@ const CameraPage = () => {
                   screenshotFormat="image/jpeg"
                   style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   videoConstraints={{
-                    facingMode: 'environment',
+                    deviceId: selectedDeviceId ? { exact: selectedDeviceId } : undefined,
+                    facingMode: selectedDeviceId ? undefined : { ideal: 'environment' },
                     width: { ideal: 1920 },
                     height: { ideal: 1440 },
                   }}
@@ -459,20 +536,35 @@ const CameraPage = () => {
                 <Button position="absolute" bottom="6rem" left={4} bg="gray.700" color="white" size="sm" onClick={triggerFileUpload}>
                   <Icon as={FiImage} mr={2} /> Gallery
                 </Button>
-
-                <Input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  display="none"
-                />
               </Box>
             )}
           </>
         ) : (
           <Box w="full" h="full" position="relative">
-            <Box as="img" src={capturedImage} alt="Captured" w="full" h="full" objectFit="cover" />
+            {/* Show annotated image with YOLO detections if available, otherwise original */}
+            <Box as="img" 
+              src={annotatedImage || capturedImage} 
+              alt="Captured" 
+              w="full" 
+              h="full" 
+              objectFit="cover" 
+            />
+            
+            {/* Detection count badge */}
+            {detections.length > 0 && !isAnalyzing && (
+              <Badge
+                position="absolute"
+                top={4}
+                right={4}
+                colorScheme="green"
+                fontSize="md"
+                px={3}
+                py={1}
+                borderRadius="full"
+              >
+                {detections.length} item{detections.length !== 1 ? 's' : ''} detected
+              </Badge>
+            )}
 
             {isAnalyzing && (
               <Flex position="absolute" inset={0} bgGradient="linear(to-b, rgba(0,0,0,0.8), rgba(0,0,0,0.5))" align="center" justify="center" direction="column">
@@ -748,6 +840,15 @@ const CameraPage = () => {
           </Box>
         )}
       </Flex>
+      
+      {/* Hidden file input - always rendered so ref is available */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileUpload}
+        style={{ display: 'none' }}
+      />
     </Flex>
   );
 };
