@@ -28,8 +28,6 @@ from embeddings.generator import EmbeddingGenerator
 from yolo.waste_detector import WasteDetector
 from geocoding import reverse_geocode
 from campaigns import CampaignManager
-=======
-from geocoding import reverse_geocode
 
 
 # ============================================================================
