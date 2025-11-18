@@ -111,6 +111,7 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
             icon: iconMap[weather.condition] || WiCloudy,
             recommendation: getWeatherRecommendation(weather)
           });
+          setLoadingWeather(false);
         } catch (error) {
           console.error('Error fetching weather:', error);
           setWeatherData({
