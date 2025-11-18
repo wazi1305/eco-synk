@@ -289,7 +289,7 @@ const ProfilePage = () => {
                         {stat.label.toUpperCase()}
                       </Text>
                     </VStack>
-                    <Circle size="40px" bg={rgba(47, 212, 99, 0.1)} border="1px solid" borderColor="brand.500">
+                    <Circle size="40px" bg={`rgba(47, 212, 99, 0.1)`} border="1px solid" borderColor="brand.500">
                       <Icon as={stat.icon} color="brand.500" boxSize={5} />
                     </Circle>
                   </HStack>
