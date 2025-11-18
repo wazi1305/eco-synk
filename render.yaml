@@ -25,3 +25,14 @@ services:
       - key: HF_HOME
         value: /opt/render/project/src/.cache
     healthCheckPath: /health
+
+  - type: static
+    name: ecosynk-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: ecosynk-backend
+          property: host

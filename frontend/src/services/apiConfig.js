@@ -14,12 +14,12 @@ const resolveApiBaseUrl = () => {
   }
 
   if (typeof window !== 'undefined') {
-    const { protocol, hostname, port } = window.location;
+    const { hostname, port } = window.location;
     const configuredPort = import.meta.env?.VITE_API_PORT;
     const fallbackPort = configuredPort || '8000';
     const resolvedPort = DEV_SERVER_PORTS.has(port) ? fallbackPort : port;
     const portSegment = resolvedPort ? `:${resolvedPort}` : '';
-    return `${protocol}//${hostname}${portSegment}`;
+    return `http://${hostname}${portSegment}`;
   }
 
   return 'http://localhost:8000';
