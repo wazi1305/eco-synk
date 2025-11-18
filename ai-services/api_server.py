@@ -7,7 +7,6 @@ import os
 import json
 import uuid
 import math
-import base64
 import tempfile
 import traceback
 from datetime import datetime, timedelta, timezone
@@ -24,11 +23,8 @@ from config import settings, validate_config
 from gemini.trash_analyzer import TrashAnalyzer
 from qdrant.vector_store import EcoSynkVectorStore
 from embeddings.generator import EmbeddingGenerator
-<<<<<<< HEAD
 from campaigns import CampaignManager
-=======
 from yolo.waste_detector import WasteDetector
->>>>>>> 742b0a1a25b143cec8e1cad33a0f7a19b449dd7c
 
 
 # ============================================================================
@@ -122,11 +118,7 @@ app.add_middleware(
 analyzer: Optional[TrashAnalyzer] = None
 vector_store: Optional[EcoSynkVectorStore] = None
 embedder: Optional[EmbeddingGenerator] = None
-<<<<<<< HEAD
 campaign_manager: Optional[CampaignManager] = None
-=======
-waste_detector: Optional[WasteDetector] = None
->>>>>>> 742b0a1a25b143cec8e1cad33a0f7a19b449dd7c
 
 
 def _normalize_payload_location(payload: Optional[Dict[str, Any]]) -> Optional[Dict[str, float]]:
@@ -188,11 +180,7 @@ def _parse_timestamp(candidate: Optional[str]) -> Optional[datetime]:
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-<<<<<<< HEAD
     global analyzer, vector_store, embedder, campaign_manager
-=======
-    global analyzer, vector_store, embedder, waste_detector
->>>>>>> 742b0a1a25b143cec8e1cad33a0f7a19b449dd7c
     
     print("\n" + "=" * 60)
     print("🚀 Starting EcoSynk AI Services")
@@ -239,7 +227,6 @@ async def startup_event():
         print(f"  ⚠️  Gemini failed: {e}")
         analyzer = None
     
-<<<<<<< HEAD
     # Campaign Manager
     try:
         if vector_store and embedder:
@@ -252,19 +239,6 @@ async def startup_event():
     except Exception as e:
         print(f"  ⚠️  Campaign Manager failed: {e}")
         campaign_manager = None
-=======
-    # YOLOv8 Waste Detector
-    try:
-        print("  → Loading YOLOv8 waste detector...")
-        waste_detector = WasteDetector()
-        # Load pretrained YOLOv8n model as fallback
-        waste_detector.load_model('yolov8n.pt')  # Will auto-download if not present
-        print("  ✅ YOLO detector ready")
-    except Exception as e:
-        print(f"  ⚠️  YOLO detector failed: {e}")
-        print("  ⚠️  Will use Gemini-only analysis")
-        waste_detector = None
->>>>>>> 742b0a1a25b143cec8e1cad33a0f7a19b449dd7c
     
     print("\n✅ Server startup complete!")
     print(f"📡 API endpoints available at http://{settings.api_host}:{settings.api_port}")
@@ -294,8 +268,7 @@ async def root():
             "health": "/health",
             "analyze": "/analyze-trash",
             "volunteers": "/find-volunteers",
-            "hotspots": "/detect-hotspots",
-            "campaigns": "/campaigns"
+            "hotspots": "/detect-hotspots"
         }
     }
 
@@ -398,172 +371,6 @@ async def analyze_trash(
         print(f"❌ Analysis failed: {str(e)}")
         print(f"Stack trace:\n{error_trace}")
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
-
-
-@app.post("/detect-waste")
-async def detect_waste(
-    file: UploadFile = File(..., description="Image file for waste detection"),
-    location: Optional[str] = Form(None, description="JSON string of location {lat, lon}"),
-    user_id: Optional[str] = Form(None, description="User ID"),
-    user_notes: Optional[str] = Form(None, description="User notes about the trash"),
-    use_yolo: bool = Form(True, description="Use YOLO detection (true) or Gemini-only (false)")
-):
-    """
-    Detect waste in image using YOLOv8 + Gemini AI hybrid approach
-    
-    This endpoint:
-    1. Runs YOLOv8 detection to identify and locate waste items
-    2. Enhances analysis with Gemini AI using detection context
-    3. Generates comprehensive report with bounding boxes
-    4. Stores in Qdrant with embedding
-    5. Returns detections, annotated image (base64), and analysis
-    """
-    if analyzer is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Gemini analyzer not configured. Please set GEMINI_API_KEY"
-        )
-    
-    try:
-        # Parse location if provided
-        location_data = None
-        if location:
-            location_data = json.loads(location)
-        
-        # Save uploaded file temporarily
-        file_extension = Path(file.filename).suffix or ".jpg"
-        temp_fd, temp_path_str = tempfile.mkstemp(suffix=file_extension, prefix="ecosynk_detect_")
-        temp_path = Path(temp_path_str)
-        
-        os.close(temp_fd)
-        
-        # Read and convert image to ensure compatibility with OpenCV
-        try:
-            from PIL import Image
-            import io
-            
-            # Read uploaded file
-            content = await file.read()
-            
-            # Open with PIL (supports AVIF, HEIC, WebP, etc.)
-            pil_image = Image.open(io.BytesIO(content))
-            
-            # Convert to RGB if needed
-            if pil_image.mode != 'RGB':
-                pil_image = pil_image.convert('RGB')
-            
-            # Save as JPEG (universally supported by OpenCV)
-            pil_image.save(str(temp_path), 'JPEG', quality=95)
-            print(f"📸 Image converted: {file.filename} -> JPEG for OpenCV compatibility")
-            
-        except Exception as e:
-            print(f"⚠️  PIL conversion failed: {e}, saving as-is")
-            # Fallback: save raw content
-            with open(temp_path, "wb") as f:
-                f.write(content)
-        
-        # Run YOLO detection if available and requested
-        detections = []
-        detection_summary = {}
-        annotated_image_base64 = None
-        
-        if use_yolo and waste_detector is not None:
-            print(f"🔍 Running YOLOv8 detection on {file.filename}...")
-            detections = waste_detector.detect(str(temp_path))
-            detection_summary = waste_detector.get_detection_summary(detections)
-            
-            # Generate annotated image only if we have detections and valid image
-            if detections and len(detections) > 0:
-                try:
-                    annotated_path = temp_path.with_suffix('.annotated.jpg')
-                    waste_detector.visualize_detections(
-                        str(temp_path),
-                        detections,
-                        str(annotated_path)
-                    )
-                    
-                    if annotated_path.exists():
-                        print(f"📸 Annotated image created at: {annotated_path}")
-                        print(f"📊 Annotated image size: {annotated_path.stat().st_size} bytes")
-                        
-                        # Convert annotated image to base64
-                        with open(annotated_path, 'rb') as f:
-                            annotated_image_base64 = base64.b64encode(f.read()).decode('utf-8')
-                        
-                        print(f"✅ Annotated image base64 length: {len(annotated_image_base64)}")
-                        
-                        # Cleanup annotated image
-                        annotated_path.unlink()
-                    else:
-                        print("⚠️  Annotated image file not created")
-                        
-                except Exception as viz_error:
-                    print(f"⚠️  Visualization failed: {viz_error}")
-                    # Continue without annotated image
-            else:
-                print(f"ℹ️  No detections found, skipping visualization")
-            
-            print(f"✅ YOLO detected {len(detections)} waste items")
-        
-        # Analyze with Gemini (enhanced with YOLO context if available)
-        analysis = analyzer.analyze_trash_image(
-            str(temp_path),
-            location=location_data,
-            user_notes=user_notes,
-            yolo_detections=detections if detections else None
-        )
-        
-        # Merge YOLO summary into analysis
-        if detection_summary:
-            analysis['yolo_detection'] = detection_summary
-        
-        # Generate embedding
-        embedding = embedder.generate_trash_report_embedding(analysis)
-        
-        # Store in Qdrant
-        report_id = f"report_{datetime.utcnow().timestamp()}_{uuid.uuid4().hex[:8]}"
-        
-        metadata = analysis.copy()
-        if user_id:
-            metadata['user_id'] = user_id
-        metadata['report_id'] = report_id
-        
-        vector_store.store_trash_report(
-            embedding=embedding,
-            metadata=metadata,
-            report_id=report_id
-        )
-        
-        # Cleanup temp file
-        temp_path.unlink()
-        
-        # Return comprehensive response
-        response = {
-            "status": "success",
-            "report_id": report_id,
-            "analysis": analysis,
-            "detections": detections,
-            "detection_summary": detection_summary,
-            "message": "Waste detection and analysis complete"
-        }
-        
-        if annotated_image_base64:
-            response["annotated_image"] = f"data:image/jpeg;base64,{annotated_image_base64}"
-            print(f"✅ Response includes annotated_image (length: {len(response['annotated_image'])})")
-        else:
-            print("⚠️  No annotated_image in response")
-        
-        return response
-        
-    except json.JSONDecodeError as e:
-        print(f"❌ JSON decode error: {e}")
-        raise HTTPException(status_code=400, detail="Invalid location JSON")
-    except Exception as e:
-        error_trace = traceback.format_exc()
-        print(f"❌ Detection failed: {str(e)}")
-        print(f"Stack trace:\n{error_trace}")
-        raise HTTPException(status_code=500, detail=f"Detection failed: {str(e)}")
-
 
 
 @app.post("/find-volunteers")
