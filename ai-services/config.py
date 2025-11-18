@@ -53,9 +53,10 @@ class Settings(BaseSettings):
         if api_host:
             kwargs['api_host'] = api_host
         
-        api_port = os.getenv("API_PORT")
-        if api_port:
-            kwargs['api_port'] = int(api_port)
+        # Use Render's PORT env var if available, otherwise API_PORT
+        port = os.getenv("PORT") or os.getenv("API_PORT")
+        if port:
+            kwargs['api_port'] = int(port)
         
         # Handle DEBUG specially to avoid bool parsing errors
         debug_env = os.getenv("DEBUG")
