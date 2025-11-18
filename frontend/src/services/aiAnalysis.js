@@ -42,17 +42,33 @@ class AIAnalysisService {
       }
 
       const result = await response.json();
-      
+
+      const responseLocation = result.location || result.analysis?.metadata?.location || location || null;
+      if (result.analysis) {
+        result.analysis.metadata = result.analysis.metadata || {};
+        if (responseLocation) {
+          const existingLocation = result.analysis.metadata.location || {};
+          result.analysis.metadata.location = { ...existingLocation, ...responseLocation };
+        }
+        if (result.location?.name) {
+          result.analysis.metadata.location_name = result.location.name;
+        }
+        if (result.location?.context) {
+          result.analysis.metadata.location_context = result.location.context;
+        }
+      }
+
       // Store report ID for future reference
       if (result.report_id) {
-        this.storeReportLocally(result.report_id, result.analysis);
+        this.storeReportLocally(result.report_id, result.analysis, responseLocation);
       }
 
       return {
         success: true,
         data: result.analysis,
         reportId: result.report_id,
-        message: result.message
+        message: result.message,
+        location: responseLocation
       };
 
     } catch (error) {
@@ -103,9 +119,24 @@ class AIAnalysisService {
       }
 
       const result = await response.json();
-      
+
+      const responseLocation = result.location || result.analysis?.metadata?.location || location || null;
+      if (result.analysis) {
+        result.analysis.metadata = result.analysis.metadata || {};
+        if (responseLocation) {
+          const existingLocation = result.analysis.metadata.location || {};
+          result.analysis.metadata.location = { ...existingLocation, ...responseLocation };
+        }
+        if (result.location?.name) {
+          result.analysis.metadata.location_name = result.location.name;
+        }
+        if (result.location?.context) {
+          result.analysis.metadata.location_context = result.location.context;
+        }
+      }
+
       if (result.report_id) {
-        this.storeReportLocally(result.report_id, result.analysis);
+        this.storeReportLocally(result.report_id, result.analysis, responseLocation);
       }
 
       return {
@@ -114,10 +145,12 @@ class AIAnalysisService {
           analysis: result.analysis,
           detections: result.detections || [],
           detection_summary: result.detection_summary || {},
-          annotated_image: result.annotated_image || null
+          annotated_image: result.annotated_image || null,
+          location: responseLocation
         },
         reportId: result.report_id,
-        message: result.message
+        message: result.message,
+        location: responseLocation
       };
 
     } catch (error) {
@@ -301,12 +334,13 @@ class AIAnalysisService {
    * Store report data locally for offline access
    * @private
    */
-  storeReportLocally(reportId, analysisData) {
+  storeReportLocally(reportId, analysisData, location = null) {
     try {
       const reports = JSON.parse(localStorage.getItem('userReports') || '[]');
       reports.push({
         id: reportId,
         analysis: analysisData,
+        location: location || analysisData?.metadata?.location || null,
         timestamp: new Date().toISOString()
       });
       

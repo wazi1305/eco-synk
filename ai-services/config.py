@@ -46,6 +46,10 @@ class Settings(BaseSettings):
     default_search_limit: int = 10
     hotspot_threshold: int = 3
     default_radius_km: float = 5.0
+
+    # Geocoding
+    geocoding_user_agent: str = os.getenv("GEOCODING_USER_AGENT", "EcoSynk/1.0 (+support@ecosynk.local)")
+    geocoding_email: Optional[str] = os.getenv("GEOCODING_EMAIL")
     
     def __init__(self, **kwargs):
         # Override with env vars manually to avoid bool parsing issues

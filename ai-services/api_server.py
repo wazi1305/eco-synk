@@ -25,6 +25,7 @@ from gemini.trash_analyzer import TrashAnalyzer
 from qdrant.vector_store import EcoSynkVectorStore
 from embeddings.generator import EmbeddingGenerator
 from yolo.waste_detector import WasteDetector
+from geocoding import reverse_geocode
 
 
 # ============================================================================
@@ -91,6 +92,16 @@ class CampaignCreateRequest(BaseModel):
     target_funding_usd: Optional[float] = Field(default=500, ge=0)
     volunteer_goal: Optional[int] = Field(default=10, ge=1)
     duration_days: Optional[int] = Field(default=30, ge=1, le=365)
+
+
+class ReportSearchRequest(BaseModel):
+    """Request model for semantic trash report search"""
+    query: str = Field(..., description="Natural language search query")
+    limit: int = Field(default=10, ge=1, le=50)
+    score_threshold: float = Field(default=0.35, ge=0.0, le=1.0)
+    time_window_days: Optional[int] = Field(default=None, ge=1, le=365)
+    location: Optional[LocationModel] = None
+    radius_km: float = Field(default=5.0, ge=0.1, le=100.0)
 
 
 # ============================================================================
@@ -171,6 +182,46 @@ def _parse_timestamp(candidate: Optional[str]) -> Optional[datetime]:
         return parsed
     except Exception:
         return None
+
+
+def _enrich_location(raw_location: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    """Normalize lat/lon values and attach human-readable context."""
+    if not raw_location:
+        return None
+
+    lat = (
+        raw_location.get('lat') or
+        raw_location.get('latitude')
+    )
+    lon = (
+        raw_location.get('lon') or
+        raw_location.get('lng') or
+        raw_location.get('longitude')
+    )
+
+    try:
+        lat_f = float(lat)
+        lon_f = float(lon)
+    except (TypeError, ValueError):
+        return None
+
+    geo = {"lat": lat_f, "lon": lon_f}
+    context = None
+    label = None
+
+    try:
+        context = reverse_geocode(lat_f, lon_f)
+        if context:
+            label = context.get('name') or context.get('display_name')
+    except Exception as geo_error:  # noqa: BLE001 - avoid breaking request flow
+        print(f"⚠️  Reverse geocoding error: {geo_error}")
+        context = None
+
+    return {
+        "geo": geo,
+        "context": context,
+        "label": label
+    }
 
 
 # ============================================================================
@@ -316,9 +367,17 @@ async def analyze_trash(
     
     try:
         # Parse location if provided
-        location_data = None
+        location_info = None
+        location_geo = None
+        location_context = None
+        location_label = None
         if location:
             location_data = json.loads(location)
+            location_info = _enrich_location(location_data)
+            if location_info:
+                location_geo = location_info.get('geo')
+                location_context = location_info.get('context')
+                location_label = location_info.get('label')
         
         # Save uploaded file temporarily (cross-platform)
         file_extension = Path(file.filename).suffix or ".jpg"
@@ -334,9 +393,21 @@ async def analyze_trash(
         # Analyze with Gemini
         analysis = analyzer.analyze_trash_image(
             str(temp_path),
-            location=location_data,
+            location=location_geo,
             user_notes=user_notes
         )
+
+        analysis_metadata = analysis.setdefault('metadata', {})
+        if location_geo:
+            analysis_metadata['location'] = location_geo
+        if location_context:
+            analysis_metadata['location_context'] = location_context
+            if location_context.get('confidence') is not None:
+                analysis_metadata['location_confidence'] = location_context.get('confidence')
+            if location_context.get('source'):
+                analysis_metadata['location_source'] = location_context.get('source')
+        if location_label:
+            analysis_metadata['location_name'] = location_label
         
         # Generate embedding
         embedding = embedder.generate_trash_report_embedding(analysis)
@@ -346,6 +417,12 @@ async def analyze_trash(
         
         # Prepare metadata for storage
         metadata = analysis.copy()
+        if location_geo:
+            metadata['location'] = location_geo
+        if location_context:
+            metadata['location_context'] = location_context
+        if location_label:
+            metadata['location_name'] = location_label
         if user_id:
             metadata['user_id'] = user_id
         metadata['report_id'] = report_id
@@ -360,12 +437,21 @@ async def analyze_trash(
         temp_path.unlink()
         
         # Return response
-        return {
+        response = {
             "status": "success",
             "report_id": report_id,
             "analysis": analysis,
             "message": "Trash report analyzed and stored successfully"
         }
+
+        if location_geo:
+            response["location"] = {
+                **location_geo,
+                **({"name": location_label} if location_label else {}),
+                **({"context": location_context} if location_context else {})
+            }
+
+        return response
         
     except json.JSONDecodeError as e:
         print(f"❌ JSON decode error: {e}")
@@ -403,9 +489,17 @@ async def detect_waste(
     
     try:
         # Parse location if provided
-        location_data = None
+        location_info = None
+        location_geo = None
+        location_context = None
+        location_label = None
         if location:
-            location_data = json.loads(location)
+            raw_location = json.loads(location)
+            location_info = _enrich_location(raw_location)
+            if location_info:
+                location_geo = location_info.get('geo')
+                location_context = location_info.get('context')
+                location_label = location_info.get('label')
         
         # Save uploaded file temporarily
         file_extension = Path(file.filename).suffix or ".jpg"
@@ -485,7 +579,7 @@ async def detect_waste(
         # Analyze with Gemini (enhanced with YOLO context if available)
         analysis = analyzer.analyze_trash_image(
             str(temp_path),
-            location=location_data,
+            location=location_geo,
             user_notes=user_notes,
             yolo_detections=detections if detections else None
         )
@@ -494,6 +588,18 @@ async def detect_waste(
         if detection_summary:
             analysis['yolo_detection'] = detection_summary
         
+        analysis_metadata = analysis.setdefault('metadata', {})
+        if location_geo:
+            analysis_metadata['location'] = location_geo
+        if location_context:
+            analysis_metadata['location_context'] = location_context
+            if location_context.get('confidence') is not None:
+                analysis_metadata['location_confidence'] = location_context.get('confidence')
+            if location_context.get('source'):
+                analysis_metadata['location_source'] = location_context.get('source')
+        if location_label:
+            analysis_metadata['location_name'] = location_label
+
         # Generate embedding
         embedding = embedder.generate_trash_report_embedding(analysis)
         
@@ -501,6 +607,12 @@ async def detect_waste(
         report_id = f"report_{datetime.utcnow().timestamp()}_{uuid.uuid4().hex[:8]}"
         
         metadata = analysis.copy()
+        if location_geo:
+            metadata['location'] = location_geo
+        if location_context:
+            metadata['location_context'] = location_context
+        if location_label:
+            metadata['location_name'] = location_label
         if user_id:
             metadata['user_id'] = user_id
         metadata['report_id'] = report_id
@@ -524,6 +636,13 @@ async def detect_waste(
             "message": "Waste detection and analysis complete"
         }
         
+        if location_geo:
+            response["location"] = {
+                **location_geo,
+                **({"name": location_label} if location_label else {}),
+                **({"context": location_context} if location_context else {})
+            }
+
         if annotated_image_base64:
             response["annotated_image"] = f"data:image/jpeg;base64,{annotated_image_base64}"
             print(f"✅ Response includes annotated_image (length: {len(response['annotated_image'])})")
@@ -541,6 +660,96 @@ async def detect_waste(
         print(f"Stack trace:\n{error_trace}")
         raise HTTPException(status_code=500, detail=f"Detection failed: {str(e)}")
 
+
+ 
+@app.post("/reports/search")
+async def search_reports(request: ReportSearchRequest):
+    """Semantic search across stored trash reports using Qdrant"""
+    if embedder is None or vector_store is None:
+        raise HTTPException(status_code=503, detail="Search services are not initialized")
+
+    try:
+        print(f"🔎 Semantic search query received: '{request.query}'")
+        query_embedding = embedder.generate_query_embedding(request.query)
+
+        location_filter = None
+        if request.location:
+            location_filter = {
+                'lat': request.location.lat,
+                'lon': request.location.lon,
+                'radius_km': request.radius_km
+            }
+
+        effective_threshold = request.score_threshold
+        fallback_notes = []
+
+        results = vector_store.find_similar_reports(
+            embedding=query_embedding,
+            limit=request.limit,
+            score_threshold=effective_threshold,
+            location_filter=location_filter,
+            time_window_days=request.time_window_days
+        )
+
+        if not results and effective_threshold > 0.3:
+            effective_threshold = 0.3
+            results = vector_store.find_similar_reports(
+                embedding=query_embedding,
+                limit=request.limit,
+                score_threshold=effective_threshold,
+                location_filter=location_filter,
+                time_window_days=request.time_window_days
+            )
+            fallback_notes.append("lowered score threshold to 0.30 for broader match")
+
+        if not results and location_filter is not None:
+            results = vector_store.find_similar_reports(
+                embedding=query_embedding,
+                limit=request.limit,
+                score_threshold=effective_threshold,
+                location_filter=None,
+                time_window_days=request.time_window_days
+            )
+            fallback_notes.append("removed location filter to broaden match")
+
+        response_items = []
+        for item in results:
+            data = item.get('data', {}) or {}
+            report_id = data.get('report_id') or data.get('metadata', {}).get('report_id')
+            timestamp = data.get('timestamp') or data.get('metadata', {}).get('analyzed_at')
+            location = data.get('location') or data.get('metadata', {}).get('location')
+
+            response_items.append({
+                'report_id': report_id,
+                'score': item.get('score'),
+                'primary_material': data.get('primary_material'),
+                'priority': data.get('cleanup_priority_score'),
+                'description': data.get('description'),
+                'timestamp': timestamp,
+                'location': location,
+                'analysis': data
+            })
+
+        applied_filters = {
+            'location': location_filter,
+            'time_window_days': request.time_window_days,
+            'fallback_notes': fallback_notes if fallback_notes else None
+        }
+
+        return {
+            'status': 'success',
+            'query': request.query,
+            'results': response_items,
+            'count': len(response_items),
+            'effective_score_threshold': effective_threshold,
+            'applied_filters': applied_filters
+        }
+
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        print(f"❌ Report search failed: {e}")
+        print(f"Stack trace:\n{error_trace}")
+        raise HTTPException(status_code=500, detail=f"Report search failed: {str(e)}")
 
 
 @app.post("/find-volunteers")

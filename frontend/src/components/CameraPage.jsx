@@ -25,6 +25,17 @@ import {
 import { FiCamera, FiImage, FiStar, FiMapPin, FiUsers, FiAlertCircle } from 'react-icons/fi';
 import aiAnalysisService from '../services/aiAnalysis';
 
+const formatCoordinatePair = (lat, lon) => {
+  const latNum = typeof lat === 'number' ? lat : Number(lat);
+  const lonNum = typeof lon === 'number' ? lon : Number(lon);
+
+  if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) {
+    return null;
+  }
+
+  return `${latNum.toFixed(4)}, ${lonNum.toFixed(4)}`;
+};
+
 const USER_STATS = {
   points: 420,
   streak: 7,
@@ -55,6 +66,21 @@ const CameraPage = () => {
   const lastScrollYRef = useRef(0);
   const scrollTimeoutRef = useRef(null);
   const toast = useToast();
+
+  const locationMetadata = analysisResult?.metadata?.location;
+  const locationContext = analysisResult?.metadata?.location_context;
+  const locationName = analysisResult?.metadata?.location_name || locationContext?.name || locationContext?.display_name;
+  const locationDisplayName = locationContext?.display_name;
+  const locationCoordinatesLabel = locationMetadata
+    ? formatCoordinatePair(locationMetadata.lat, locationMetadata.lon)
+    : null;
+  const locationSource = locationContext?.source;
+  const locationSourceLabel = locationSource
+    ? locationSource
+        .split('_')
+        .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+        .join(' ')
+    : null;
 
   // Simplified scroll handler with debouncing
   const handleScroll = React.useCallback((e) => {
@@ -609,6 +635,29 @@ const CameraPage = () => {
                     <CardBody p={6}>
                       <VStack spacing={4} align="stretch">
                         <Heading size="md" color="gray.900">Analysis Results</Heading>
+
+                        {(locationName || locationCoordinatesLabel) && (
+                          <Box p={3} bg="green.50" borderRadius="lg">
+                            <HStack align="start" spacing={3}>
+                              <Icon as={FiMapPin} color="green.600" mt={0.5} />
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="sm" fontWeight="semibold" color="green.700">Location</Text>
+                                {locationName && (
+                                  <Text fontSize="sm" color="green.900">{locationName}</Text>
+                                )}
+                                {locationDisplayName && locationDisplayName !== locationName && (
+                                  <Text fontSize="xs" color="green.600">{locationDisplayName}</Text>
+                                )}
+                                {locationCoordinatesLabel && (
+                                  <Text fontSize="xs" color="green.500">{locationCoordinatesLabel}</Text>
+                                )}
+                                {locationSourceLabel && (
+                                  <Text fontSize="2xs" color="green.500">Source: {locationSourceLabel}</Text>
+                                )}
+                              </VStack>
+                            </HStack>
+                          </Box>
+                        )}
                         
                         <HStack justify="space-between" p={3} bg="gray.50" borderRadius="lg">
                           <Text fontSize="sm" fontWeight="semibold" color="gray.700">Material Type</Text>
