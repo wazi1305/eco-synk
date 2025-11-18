@@ -366,25 +366,7 @@ const CampaignsPage = () => {
             direction={{ base: 'column', md: 'row' }}
             gap={3}
           >
-            <HStack spacing={3} flexWrap="wrap">
-              {sourceLabel && (
-                <Badge
-                  colorScheme={dataSource === 'local-cache' ? 'yellow' : 'whiteAlpha'}
-                  borderRadius="full"
-                  px={3}
-                  py={1}
-                  fontSize="xs"
-                  textTransform="none"
-                >
-                  {sourceLabel}
-                </Badge>
-              )}
-              {lastUpdated && (
-                <Text fontSize="xs" color="whiteAlpha.800">
-                  Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              )}
-            </HStack>
+            <Box />
 
             <HStack spacing={2}>
               <Button
@@ -417,7 +399,7 @@ const CampaignsPage = () => {
         flex="1" 
         overflowY="auto"
         onScroll={handleScroll}
-        pt={showHeader ? "220px" : "20px"}
+        pt={showHeader ? "280px" : "20px"}
         pb="80px"
         transition="padding-top 0.3s ease"
         position="relative"

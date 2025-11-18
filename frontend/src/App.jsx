@@ -24,7 +24,6 @@ import CameraPage from './components/CameraPage';
 import MapPage from './components/MapPage';
 import ProfilePage from './components/ProfilePage';
 import CampaignsPage from './components/campaigns/CampaignsPage';
-import BackendTestPage from './components/BackendTestPage';
 import AnalyticsDashboard from './components/AnalyticsDashboard';
 import NavigationPage from './components/NavigationPage';
 
@@ -126,7 +125,6 @@ function App() {
           <Route path="/report" element={<CameraPage />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/test" element={<BackendTestPage />} />
           <Route path="/analytics" element={<AnalyticsDashboard />} />
           {/* Catch-all route */}
           <Route path="*" element={<Navigate to="/nav" replace />} />

@@ -661,7 +661,7 @@ const FeedPage = () => {
       >
         <VStack spacing={0}>
           {/* Main Header */}
-          <HStack justify="space-between" p={{ base: 3, md: 4 }} w="full" maxW="800px" mx="auto">
+          <HStack justify="space-between" p={{ base: 3, md: 4 }} pb={0} w="full" maxW="800px" mx="auto">
             <VStack align="start" spacing={1}>
               <Heading size="lg" color="brand.600">Feed</Heading>
               <Text fontSize="sm" color="gray.600">
@@ -684,7 +684,7 @@ const FeedPage = () => {
           </HStack>
 
           {/* Today's Impact Bar */}
-          <Box w="full" bg="gradient.primary" px={{ base: 2, md: 4 }} py={3}>
+          <Box w="full" bg="gradient.primary" px={{ base: 2, md: 4 }} py={1}>
             <Box maxW="800px" mx="auto">
               <HStack justify="space-around" color="white" fontSize={{ base: 'xs', md: 'sm' }} spacing={{ base: 1, md: 4 }}>
                 <VStack spacing={0}>
@@ -717,30 +717,7 @@ const FeedPage = () => {
                 <Tab flex={1} fontSize={{ base: 'xs', md: 'sm' }}>Challenges</Tab>
               </TabList>
             </Tabs>
-            {(metadata.campaigns || metadata.volunteers || metadata.reports || lastUpdated) && (
-              <HStack spacing={2} mt={2} flexWrap="wrap">
-                {metadata.campaigns && (
-                  <Badge colorScheme={getSourceColor(metadata.campaigns.source)}>
-                    Campaigns · {metadata.campaigns.source}
-                  </Badge>
-                )}
-                {metadata.volunteers && (
-                  <Badge colorScheme={getSourceColor(metadata.volunteers.source)}>
-                    Volunteers · {metadata.volunteers.source}
-                  </Badge>
-                )}
-                {metadata.reports && (
-                  <Badge colorScheme={getSourceColor(metadata.reports.source)}>
-                    Reports · {metadata.reports.source}
-                  </Badge>
-                )}
-                {lastUpdated && (
-                  <Text fontSize="xs" color="gray.500">
-                    Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </Text>
-                )}
-              </HStack>
-            )}
+
           </Box>
         </VStack>
       </Box>

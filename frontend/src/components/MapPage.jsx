@@ -227,20 +227,7 @@ const MapPage = () => {
             </Button>
           </HStack>
 
-          {(dataSource || lastUpdated) && (
-            <HStack spacing={3} mt={2} color="gray.500" fontSize="sm">
-              {dataSource && (
-                <Badge colorScheme={dataSource === 'local-cache' ? 'yellow' : 'green'}>
-                  {dataSource === 'network' ? 'Live from Qdrant' : dataSource}
-                </Badge>
-              )}
-              {lastUpdated && (
-                <Text>
-                  Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              )}
-            </HStack>
-          )}
+
         </Box>
 
         {(error || warning) && (

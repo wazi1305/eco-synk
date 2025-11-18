@@ -641,46 +641,7 @@ const CameraPage = () => {
       overflow="hidden"
       style={{ height: windowHeight }}
     >
-      {/* Header - Collapsible */}
-      <Box
-        bg="gray.900"
-        color="white"
-        px={4}
-        py={4}
-        flexShrink={0}
-        shadow="md"
-        borderBottom="1px solid"
-        borderColor="gray.700"
-        position="fixed"
-        top={0}
-        left={0}
-        right={0}
-        transform={showHeader ? "translateY(0)" : "translateY(-100%)"}
-        transition="transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-        zIndex={20}
-      >
-        <HStack justify="space-between" align="start" mb={3}>
-          <VStack align="start" spacing={1} flex="1">
-            <Heading size="lg" fontWeight="bold">Report Trash</Heading>
-            <Text fontSize="sm" color="gray.400">Document your environmental impact</Text>
-          </VStack>
-          <VStack align="end" spacing={0}>
-            <Heading size="md" color="brand.400">{USER_STATS.points}</Heading>
-            <Text fontSize="xs" color="gray.400">Points</Text>
-          </VStack>
-        </HStack>
 
-        <Grid templateColumns="repeat(2, 1fr)" gap={2}>
-          <GridItem bg="whiteAlpha.10" px={3} py={2} borderRadius="lg" textAlign="center">
-            <Heading size="sm" color="white">{USER_STATS.streak}</Heading>
-            <Text fontSize="xs" color="gray.400">Day Streak</Text>
-          </GridItem>
-          <GridItem bg="whiteAlpha.10" px={3} py={2} borderRadius="lg" textAlign="center">
-            <Heading size="sm" color="white">{USER_STATS.cleanups}</Heading>
-            <Text fontSize="xs" color="gray.400">Cleanups</Text>
-          </GridItem>
-        </Grid>
-      </Box>
 
       <Flex
         flex="1"
@@ -691,8 +652,7 @@ const CameraPage = () => {
         position="relative"
         overflow="auto"
         onScroll={handleScroll}
-        pt={showHeader ? "140px" : "80px"}
-        transition="padding-top 0.4s ease-out"
+
       >
         {console.log('Render check - capturedImage:', capturedImage ? 'SET' : 'NULL', 'submitted:', submitted, 'isAnalyzing:', isAnalyzing)}
         {!capturedImage ? (
