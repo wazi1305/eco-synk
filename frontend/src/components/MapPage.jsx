@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback, useMemo } from 'react';
+﻿import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Box,
   VStack,
@@ -19,6 +19,7 @@ import {
   StatNumber,
   Alert,
   AlertIcon,
+  Tooltip,
 } from '@chakra-ui/react';
 import { FiMaximize2, FiMinimize2, FiMapPin, FiRefreshCw, FiCalendar, FiUsers } from 'react-icons/fi';
 import MapView from './map/MapView';
@@ -37,6 +38,7 @@ const MapPage = () => {
   const [dataSource, setDataSource] = useState(null);
   const [lastUpdated, setLastUpdated] = useState(null);
   const toast = useToast();
+  const mapViewRef = useRef(null);
 
   const loadCampaigns = useCallback(
     async ({ forceRefresh = false } = {}) => {
@@ -99,6 +101,17 @@ const MapPage = () => {
 
   // Handle campaign join action
   const handleCampaignJoin = (campaign) => {
+    if (!campaign?.joinable) {
+      toast({
+        title: 'Join not available',
+        description: 'This campaign is outside your current region or distance range.',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
     toast({
       title: 'Campaign joined!',
       description: `You've successfully joined "${campaign.title}"`,
@@ -130,6 +143,10 @@ const MapPage = () => {
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
   };
+
+  const handleFindNearby = useCallback(() => {
+    mapViewRef.current?.locateUser?.();
+  }, []);
 
   // Calculate stats
   const stats = useMemo(() => ({
@@ -165,8 +182,8 @@ const MapPage = () => {
         <IconButton
           icon={<FiMinimize2 />}
           position="absolute"
-          top={{ base: "10px", md: "20px" }}
-          left={{ base: "10px", md: "20px" }}
+          bottom={{ base: "16px", md: "24px" }}
+          left={{ base: "12px", md: "24px" }}
           zIndex="1500"
           colorScheme="red"
           variant="solid"
@@ -183,6 +200,7 @@ const MapPage = () => {
         
         <Box height="100%" width="100%">
           <MapView
+            ref={mapViewRef}
             campaigns={campaigns}
             onCampaignSelect={handleCampaignSelect}
             onCampaignJoin={handleCampaignJoin}
@@ -301,6 +319,7 @@ const MapPage = () => {
               isolation="isolate"
             >
               <MapView
+                ref={mapViewRef}
                 campaigns={campaigns}
                 onCampaignSelect={handleCampaignSelect}
                 onCampaignJoin={handleCampaignJoin}
@@ -361,11 +380,44 @@ const MapPage = () => {
                   </HStack>
                 </SimpleGrid>
 
+                {!selectedCampaign.joinable && (
+                  <Alert status="info" borderRadius="md" fontSize="sm">
+                    <AlertIcon />
+                    This campaign sits outside your eligible region. You can join campaigns in your country or nearby your current location.
+                    {typeof selectedCampaign.joinCriteria?.distanceKm === 'number' && (
+                      <>
+                        {' '}It is approximately {selectedCampaign.joinCriteria.distanceKm.toFixed(1)} km from you.
+                      </>
+                    )}
+                  </Alert>
+                )}
+
                 <HStack spacing={{ base: 2, md: 3 }} flexDirection={{ base: 'column', sm: 'row' }}>
-                  <Button colorScheme="brand" size={{ base: 'md', md: 'sm' }} flex={1} w={{ base: 'full', sm: 'auto' }} minH="44px">
-                    Join Campaign
-                  </Button>
-                  <Button variant="outline" size={{ base: 'md', md: 'sm' }} flex={1} w={{ base: 'full', sm: 'auto' }} minH="44px">
+                  <Tooltip
+                    label={selectedCampaign.joinable ? 'Join this cleanup effort' : 'Join requests are restricted to nearby or in-country campaigns'}
+                    placement="top"
+                    shouldWrapChildren
+                  >
+                    <Button
+                      colorScheme="brand"
+                      size={{ base: 'md', md: 'sm' }}
+                      flex={1}
+                      w={{ base: 'full', sm: 'auto' }}
+                      minH="44px"
+                      onClick={() => handleCampaignJoin(selectedCampaign)}
+                      isDisabled={!selectedCampaign.joinable}
+                    >
+                      Join Campaign
+                    </Button>
+                  </Tooltip>
+                  <Button
+                    variant="outline"
+                    size={{ base: 'md', md: 'sm' }}
+                    flex={1}
+                    w={{ base: 'full', sm: 'auto' }}
+                    minH="44px"
+                    onClick={() => handleCampaignView(selectedCampaign)}
+                  >
                     View Details
                   </Button>
                 </HStack>
@@ -385,7 +437,7 @@ const MapPage = () => {
                 Every cleanup makes a difference. Find a campaign near you and help create a cleaner, greener Dubai.
               </Text>
               <HStack spacing={3} justify="center">
-                <Button colorScheme="brand" leftIcon={<FiMapPin />}>
+                <Button colorScheme="brand" leftIcon={<FiMapPin />} onClick={handleFindNearby}>
                   Find Nearby
                 </Button>
                 <Button variant="outline" leftIcon={<FiUsers />}>

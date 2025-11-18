@@ -1,6 +1,6 @@
 import React from 'react';
 import { Marker, Popup } from 'react-leaflet';
-import { Box, VStack, HStack, Text, Button, Badge } from '@chakra-ui/react';
+import { Box, VStack, HStack, Text, Button, Badge, Tooltip } from '@chakra-ui/react';
 import L from 'leaflet';
 
 // Custom marker icon for campaigns
@@ -22,6 +22,11 @@ const CampaignMarker = ({
   onView, 
   isSelected = false
 }) => {
+  const canJoin = typeof campaign.joinable === 'boolean' ? campaign.joinable : true;
+  const joinTooltip = canJoin
+    ? 'Join this cleanup campaign'
+    : 'Join requests are limited to campaigns in your country or nearby radius';
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return 'green';
@@ -63,9 +68,16 @@ const CampaignMarker = ({
               <Button size="xs" colorScheme="blue" onClick={() => onView?.()}>
                 View
               </Button>
-              <Button size="xs" colorScheme="green" onClick={() => onJoin?.()}>
-                Join
-              </Button>
+              <Tooltip label={joinTooltip} placement="top" shouldWrapChildren>
+                <Button
+                  size="xs"
+                  colorScheme="green"
+                  onClick={() => onJoin?.()}
+                  isDisabled={!canJoin}
+                >
+                  Join
+                </Button>
+              </Tooltip>
             </HStack>
           </VStack>
         </Box>

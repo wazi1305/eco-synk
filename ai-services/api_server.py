@@ -27,6 +27,7 @@ from qdrant.vector_store import EcoSynkVectorStore
 from embeddings.generator import EmbeddingGenerator
 from yolo.waste_detector import WasteDetector
 from campaigns import CampaignManager
+from geocoding import reverse_geocode
 
 
 # ============================================================================
@@ -349,6 +350,47 @@ async def root():
             "create_campaign": "POST /campaigns"
         }
     }
+
+
+@app.get("/geocode/reverse")
+async def geocode_reverse(
+    lat: float = Query(..., description="Latitude to reverse geocode"),
+    lon: float = Query(..., description="Longitude to reverse geocode"),
+    include_raw: bool = Query(False, description="Include raw provider payload"),
+):
+    """Reverse geocode latitude/longitude into a human readable label."""
+    try:
+        rounded_lat = round(float(lat), 6)
+        rounded_lon = round(float(lon), 6)
+    except (TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid latitude or longitude") from exc
+
+    context = reverse_geocode(rounded_lat, rounded_lon)
+
+    if not context:
+        return {
+            "lat": rounded_lat,
+            "lon": rounded_lon,
+            "label": None,
+            "address": None,
+            "display_name": None,
+            "context": None,
+        }
+
+    label = context.get("name") or context.get("display_name")
+    response_payload = {
+        "lat": rounded_lat,
+        "lon": rounded_lon,
+        "label": label,
+        "address": context.get("address"),
+        "display_name": context.get("display_name"),
+        "source": context.get("source", "openstreetmap"),
+    }
+
+    if include_raw:
+        response_payload["context"] = context
+
+    return response_payload
 
 
 @app.get("/health")
