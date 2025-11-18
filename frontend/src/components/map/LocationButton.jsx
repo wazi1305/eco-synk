@@ -6,45 +6,51 @@ import {
   Spinner,
   Box,
   Text,
-  Alert,
-  AlertIcon,
   VStack,
 } from '@chakra-ui/react';
 import { FiNavigation, FiMapPin } from 'react-icons/fi';
 import { getUserLocation, getDefaultLocation } from '../../utils/distanceCalculator';
 
-const LocationButton = ({ onLocationUpdate, userLocation, loading }) => {
+const LocationButton = ({ onLocationUpdate, onLocationStart, onRequestLocation, userLocation, loading }) => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const toast = useToast();
 
   const handleGetLocation = async () => {
     setIsGettingLocation(true);
+    onLocationStart?.();
     
     try {
-      const location = await getUserLocation();
-      onLocationUpdate(location);
-      
-      toast({
-        title: 'Location found!',
-        description: `Accuracy: ±${Math.round(location.accuracy)}m`,
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
+      if (onRequestLocation) {
+        await onRequestLocation();
+      } else {
+        const location = await getUserLocation();
+        onLocationUpdate(location);
+
+        toast({
+          title: 'Location found!',
+          description: `Accuracy: ±${Math.round(location.accuracy)}m`,
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
-      console.error('Location error:', error);
-      
-      // Fallback to Dubai center
-      const fallbackLocation = getDefaultLocation();
-      onLocationUpdate(fallbackLocation);
-      
-      toast({
-        title: 'Location unavailable',
-        description: error.message + '. Using Dubai city center.',
-        status: 'warning',
-        duration: 4000,
-        isClosable: true,
-      });
+      if (!onRequestLocation) {
+        console.error('Location error:', error);
+
+        const fallbackLocation = getDefaultLocation();
+        onLocationUpdate(fallbackLocation);
+
+        toast({
+          title: 'Location unavailable',
+          description: error.message + '. Using Dubai city center.',
+          status: 'warning',
+          duration: 4000,
+          isClosable: true,
+        });
+      } else {
+        console.error('Location request failed', error);
+      }
     } finally {
       setIsGettingLocation(false);
     }

@@ -39,8 +39,18 @@ class CampaignService {
     }
 
     const result = await response.json();
-    const campaigns = (result.campaigns || [])
-      .map((payload) => transformQdrantCampaign(payload))
+    const campaigns = await Promise.all(
+      (result.campaigns || []).map(async (payload) => {
+        try {
+          return await transformQdrantCampaign(payload);
+        } catch (error) {
+          console.warn('Failed to transform campaign:', error);
+          return null;
+        }
+      })
+    );
+    
+    const validCampaigns = campaigns
       .filter(Boolean)
       .sort((a, b) => {
         const dateA = new Date(a.timeline?.startDate || a.date || 0).getTime();
@@ -48,7 +58,7 @@ class CampaignService {
         return dateB - dateA;
       });
 
-    return limit ? campaigns.slice(0, limit) : campaigns;
+    return limit ? validCampaigns.slice(0, limit) : validCampaigns;
   }
 
   persistCampaigns(cacheKey, campaigns) {
@@ -70,6 +80,9 @@ class CampaignService {
       const requestBody = {
         campaign_name: campaignData.campaign_name,
         location: campaignData.location,
+        location_label: campaignData.location_label,
+        description: campaignData.description,
+        materials: campaignData.materials,
         hotspot: campaignData.hotspot || {
           report_count: 1,
           report_ids: [],
@@ -109,7 +122,8 @@ class CampaignService {
       return {
         success: true,
         campaign: result.campaign,
-        message: result.message
+        message: result.message,
+        bannerGenerated: Boolean(result.banner_generated)
       };
 
     } catch (error) {
@@ -256,7 +270,7 @@ class CampaignService {
         throw new Error(`Campaign ${campaignId} not found`);
       }
       const result = await response.json();
-      const campaign = transformQdrantCampaign(result.campaign);
+      const campaign = await transformQdrantCampaign(result.campaign);
 
       if (!campaign) {
         throw new Error('Campaign response was empty');

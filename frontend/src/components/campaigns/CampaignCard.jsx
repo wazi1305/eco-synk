@@ -13,6 +13,7 @@ import {
   Button,
   Avatar,
   AvatarGroup,
+  Image,
   Grid,
   GridItem,
   Icon,
@@ -51,43 +52,70 @@ const CampaignCard = ({ campaign, onViewDetails, onJoin, onDonate }) => {
 
   return (
     <Card 
-      bg="white" 
-      borderRadius="2xl" 
+      bg="neutral.800" 
+      borderRadius="20px" 
       overflow="hidden" 
-      boxShadow="lg" 
+      boxShadow="0 4px 24px rgba(0, 0, 0, 0.3)" 
       border="1px solid" 
-      borderColor="gray.100" 
+      borderColor="neutral.700" 
       _hover={{ 
-        boxShadow: 'xl', 
-        transform: 'translateY(-2px)' 
+        borderColor: 'brand.500',
+        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(47, 212, 99, 0.3)',
+        transform: 'translateY(-4px)' 
       }} 
       transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
       h="auto"
       minH="550px"
+      backdropFilter="blur(10px)"
     >
       {/* Large Campaign Image/Hero Section */}
       <Box
-        bgGradient="linear(to-br, brand.400, brand.600)"
-        h="200px"
+        position="relative"
+        h="220px"
+        overflow="hidden"
         display="flex"
         alignItems="center"
         justifyContent="center"
-        position="relative"
-        overflow="hidden"
-        fontSize="6xl"
+        bgGradient={campaign.heroImage ? undefined : 'linear(to-br, brand.500, brand.700)'}
         color="white"
+        fontSize="6xl"
       >
-        {campaign.image}
+        {campaign.heroImage ? (
+          <>
+            <Image
+              src={campaign.heroImage}
+              alt={`${campaign.title} banner`}
+              objectFit="cover"
+              w="100%"
+              h="100%"
+            />
+            {/* Dark gradient overlay for better text contrast */}
+            <Box
+              position="absolute"
+              top={0}
+              left={0}
+              right={0}
+              bottom={0}
+              bgGradient="linear(to-b, rgba(0,0,0,0.3), transparent, rgba(0,0,0,0.4))"
+            />
+          </>
+        ) : (
+          campaign.image
+        )}
         <Badge
           position="absolute"
           top={4}
           right={4}
-          colorScheme={status.colorScheme}
-          fontSize="sm"
-          fontWeight="bold"
-          px={4}
-          py={2}
-          borderRadius="full"
+          bg={status.colorScheme === 'green' ? 'brand.500' : 'neutral.600'}
+          color={status.colorScheme === 'green' ? 'neutral.900' : 'neutral.50'}
+          fontSize="xs"
+          fontWeight="600"
+          px={3}
+          py={1.5}
+          borderRadius="8px"
+          backdropFilter="blur(10px)"
+          textTransform="uppercase"
+          letterSpacing="0.05em"
         >
           {status.label}
         </Badge>
@@ -96,22 +124,22 @@ const CampaignCard = ({ campaign, onViewDetails, onJoin, onDonate }) => {
       <CardBody p={6}>
         {/* Title and Description */}
         <VStack align="flex-start" spacing={4}>
-          <Heading as="h3" size="lg" color="gray.900" lineHeight="1.3">
+          <Heading as="h3" size="lg" color="neutral.50" lineHeight="1.3" fontWeight="600" letterSpacing="-0.01em">
             {campaign.title}
           </Heading>
           
-          <Text fontSize="md" color="gray.600" lineHeight="1.5" noOfLines={2}>
+          <Text fontSize="md" color="neutral.300" lineHeight="1.6" noOfLines={2}>
             {campaign.description}
           </Text>
 
           {/* Organizer */}
-          <HStack spacing={3}>
-            <Avatar size="md" name={campaign.organizer.name} />
+          <HStack spacing={3} p={3} bg="whiteAlpha.50" borderRadius="12px" w="full">
+            <Avatar size="md" name={campaign.organizer.name} border="2px solid" borderColor="brand.500" />
             <VStack align="start" spacing={0}>
-              <Text fontSize="sm" fontWeight="600" color="gray.900">
+              <Text fontSize="sm" fontWeight="600" color="neutral.50">
                 {campaign.organizer.name}
               </Text>
-              <Text fontSize="xs" color="gray.500">
+              <Text fontSize="xs" color="neutral.400">
                 Campaign Organizer
               </Text>
             </VStack>
@@ -119,16 +147,16 @@ const CampaignCard = ({ campaign, onViewDetails, onJoin, onDonate }) => {
         </VStack>
 
         {/* Location and Date - Prominent */}
-        <VStack align="flex-start" spacing={3} mt={4}>
-          <HStack spacing={3} p={3} bg="gray.50" borderRadius="lg" w="full">
+        <VStack align="flex-start" spacing={2} mt={4}>
+          <HStack spacing={3} p={3} bg="whiteAlpha.50" borderRadius="12px" w="full" border="1px solid" borderColor="neutral.700">
             <Icon as={FiMapPin} boxSize={5} color="brand.500" />
-            <Text fontSize="md" color="gray.700" fontWeight="500">
+            <Text fontSize="sm" color="neutral.200" fontWeight="500" noOfLines={1}>
               {campaign.location.address}
             </Text>
           </HStack>
-          <HStack spacing={3} p={3} bg="gray.50" borderRadius="lg" w="full">
+          <HStack spacing={3} p={3} bg="whiteAlpha.50" borderRadius="12px" w="full" border="1px solid" borderColor="neutral.700">
             <Icon as={FiCalendar} boxSize={5} color="brand.500" />
-            <Text fontSize="md" color="gray.700" fontWeight="500">
+            <Text fontSize="sm" color="neutral.200" fontWeight="500">
               {formatDate(campaign.date)}
             </Text>
           </HStack>
@@ -139,31 +167,38 @@ const CampaignCard = ({ campaign, onViewDetails, onJoin, onDonate }) => {
           {/* Volunteers Progress */}
           <Box w="full">
             <Flex justify="space-between" align="center" mb={3}>
-              <VStack align="start" spacing={1}>
-                <Text fontSize="lg" fontWeight="bold" color="gray.900">
+              <VStack align="start" spacing={0}>
+                <Text fontSize="lg" fontWeight="700" color="neutral.50">
                   {campaign.volunteers.length} Volunteers
                 </Text>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="xs" color="neutral.400">
                   {campaign.volunteerGoal} needed
                 </Text>
               </VStack>
               <Badge 
-                colorScheme="brand" 
-                fontSize="md" 
+                bg="brand.500"
+                color="neutral.900" 
+                fontSize="sm" 
                 px={3} 
                 py={1} 
-                borderRadius="full"
+                borderRadius="8px"
+                fontWeight="600"
               >
                 {Math.round(volunteersPercent)}%
               </Badge>
             </Flex>
             <Progress
               value={volunteersPercent}
-              size="lg"
-              colorScheme="brand"
+              size="md"
               borderRadius="full"
               w="full"
-              bg="gray.200"
+              bg="neutral.700"
+              sx={{
+                '& > div': {
+                  bg: 'brand.500',
+                  boxShadow: '0 0 10px rgba(47, 212, 99, 0.5)'
+                }
+              }}
             />
             <AvatarGroup size="md" max={5} mt={3}>
               {campaign.volunteers.map((vol, idx) => (
@@ -175,62 +210,76 @@ const CampaignCard = ({ campaign, onViewDetails, onJoin, onDonate }) => {
           {/* Funding Progress */}
           <Box w="full">
             <Flex justify="space-between" align="center" mb={3}>
-              <VStack align="start" spacing={1}>
-                <Text fontSize="lg" fontWeight="bold" color="gray.900">
-                  AED {campaign.funding.current.toLocaleString()} Raised
+              <VStack align="start" spacing={0}>
+                <Text fontSize="lg" fontWeight="700" color="neutral.50">
+                  AED {campaign.funding.current.toLocaleString()}
                 </Text>
-                <Text fontSize="sm" color="gray.600">
+                <Text fontSize="xs" color="neutral.400">
                   AED {campaign.funding.goal.toLocaleString()} goal
                 </Text>
               </VStack>
               <Badge 
-                colorScheme="blue" 
-                fontSize="md" 
+                bg="whiteAlpha.200"
+                color="neutral.200" 
+                fontSize="sm" 
                 px={3} 
                 py={1} 
-                borderRadius="full"
+                borderRadius="8px"
+                fontWeight="600"
               >
                 {Math.round(progressPercent)}%
               </Badge>
             </Flex>
             <Progress
               value={progressPercent}
-              size="lg"
-              colorScheme="blue"
+              size="md"
               borderRadius="full"
               w="full"
-              bg="gray.200"
+              bg="neutral.700"
+              sx={{
+                '& > div': {
+                  bg: 'linear-gradient(90deg, #2fd463, #26b954)',
+                  boxShadow: '0 0 10px rgba(47, 212, 99, 0.4)'
+                }
+              }}
             />
           </Box>
 
           {/* Impact Metrics */}
-          <Box w="full" p={4} bg="brand.50" borderRadius="lg">
-            <Text fontSize="sm" fontWeight="600" color="brand.700" mb={3}>
+          <Box 
+            w="full" 
+            p={4} 
+            bg="rgba(47, 212, 99, 0.08)" 
+            borderRadius="12px"
+            border="1px solid"
+            borderColor="rgba(47, 212, 99, 0.2)"
+          >
+            <Text fontSize="xs" fontWeight="600" color="brand.400" mb={3} textTransform="uppercase" letterSpacing="0.05em">
               Environmental Impact
             </Text>
-            <SimpleGrid columns={3} spacing={4} textAlign="center">
+            <SimpleGrid columns={3} spacing={3} textAlign="center">
               <VStack spacing={1}>
-                <Text fontSize="xl" fontWeight="bold" color="brand.600">
+                <Text fontSize="xl" fontWeight="700" color="brand.500">
                   {campaign.esgImpact.itemsCollected}
                 </Text>
-                <Text fontSize="xs" color="gray.600">
-                  Items Collected
+                <Text fontSize="10px" color="neutral.400" textTransform="uppercase" letterSpacing="0.05em">
+                  Items
                 </Text>
               </VStack>
               <VStack spacing={1}>
-                <Text fontSize="xl" fontWeight="bold" color="brand.600">
-                  {campaign.esgImpact.areaCleaned}km²
+                <Text fontSize="xl" fontWeight="700" color="brand.500">
+                  {campaign.esgImpact.areaCleaned}
                 </Text>
-                <Text fontSize="xs" color="gray.600">
-                  Area Cleaned
+                <Text fontSize="10px" color="neutral.400" textTransform="uppercase" letterSpacing="0.05em">
+                  km² Clean
                 </Text>
               </VStack>
               <VStack spacing={1}>
-                <Text fontSize="xl" fontWeight="bold" color="brand.600">
-                  {campaign.esgImpact.co2Saved}kg
+                <Text fontSize="xl" fontWeight="700" color="brand.500">
+                  {campaign.esgImpact.co2Saved}
                 </Text>
-                <Text fontSize="xs" color="gray.600">
-                  CO² Saved
+                <Text fontSize="10px" color="neutral.400" textTransform="uppercase" letterSpacing="0.05em">
+                  kg CO²
                 </Text>
               </VStack>
             </SimpleGrid>
@@ -240,27 +289,42 @@ const CampaignCard = ({ campaign, onViewDetails, onJoin, onDonate }) => {
 
       {/* Action Buttons - Enhanced */}
       <CardFooter p={6} pt={0}>
-        <VStack spacing={3} w="full">
+        <VStack spacing={2.5} w="full">
           <Button
             w="full"
-            colorScheme="brand"
+            bg="brand.500"
+            color="neutral.900"
             onClick={campaign.status === 'active' ? onJoin : onViewDetails}
             size="lg"
             fontWeight="600"
-            borderRadius="lg"
-            py={6}
+            borderRadius="12px"
+            h="50px"
+            _hover={{
+              bg: 'brand.400',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 20px rgba(47, 212, 99, 0.3)'
+            }}
+            _active={{
+              transform: 'translateY(0)'
+            }}
           >
             {campaign.status === 'active' ? 'Join Campaign' : 'View Details'}
           </Button>
           <Button
             w="full"
             variant="outline"
-            colorScheme="brand"
+            borderColor="neutral.600"
+            color="neutral.200"
             onClick={onDonate}
             size="lg"
-            fontWeight="600"
-            borderRadius="lg"
-            py={6}
+            fontWeight="500"
+            borderRadius="12px"
+            h="50px"
+            _hover={{
+              borderColor: 'brand.500',
+              bg: 'whiteAlpha.50',
+              color: 'brand.500'
+            }}
           >
             💚 Support with Donation
           </Button>
