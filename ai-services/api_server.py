@@ -348,7 +348,8 @@ async def root():
             "analyze": "/analyze-trash",
             "volunteers": "/find-volunteers",
             "hotspots": "/detect-hotspots",
-            "campaigns": "/campaigns"
+            "campaigns": "/campaigns",
+            "create_campaign": "POST /campaigns"
         }
     }
 
@@ -1792,6 +1793,85 @@ async def get_campaign(campaign_id: str):
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch campaign: {str(e)}")
+
+
+@app.post("/campaigns")
+async def create_campaign_frontend(campaign_data: Dict[str, Any] = Body(...)):
+    """
+    Create a cleanup campaign from frontend form data
+    
+    Handles campaign creation requests from the frontend form.
+    """
+    try:
+        # Extract data from frontend format
+        campaign_name = campaign_data.get('campaign_name', 'New Campaign')
+        location = campaign_data.get('location', {})
+        target_funding_usd = campaign_data.get('target_funding_usd', 500)
+        volunteer_goal = campaign_data.get('volunteer_goal', 10)
+        duration_days = campaign_data.get('duration_days', 30)
+        estimated_waste_kg = campaign_data.get('estimated_waste_kg', 50)
+        materials = campaign_data.get('materials', 'mixed')
+        description = campaign_data.get('description', '')
+        
+        # Generate campaign ID
+        campaign_id = f"campaign_{int(datetime.utcnow().timestamp())}_{uuid.uuid4().hex[:8]}"
+        
+        # Build campaign object
+        campaign = {
+            "campaign_id": campaign_id,
+            "campaign_name": campaign_name,
+            "description": description,
+            "status": "active",
+            "created_at": datetime.utcnow().isoformat(),
+            "location": {
+                "lat": location.get('lat', 25.2048),
+                "lon": location.get('lon', 55.2708)
+            },
+            "hotspot": {
+                "report_count": 1,
+                "report_ids": [],
+                "average_priority": 5,
+                "materials": [materials] if isinstance(materials, str) else materials
+            },
+            "goals": {
+                "target_funding_usd": target_funding_usd,
+                "current_funding_usd": 0,
+                "funding_progress_percent": 0,
+                "volunteer_goal": volunteer_goal,
+                "current_volunteers": 0,
+                "volunteer_progress_percent": 0
+            },
+            "timeline": {
+                "start_date": datetime.utcnow().isoformat(),
+                "duration_days": duration_days,
+                "end_date": (datetime.utcnow() + timedelta(days=duration_days)).isoformat()
+            },
+            "impact_estimates": {
+                "estimated_waste_kg": estimated_waste_kg,
+                "estimated_volunteer_hours": volunteer_goal * 2,
+                "estimated_co2_reduction_kg": estimated_waste_kg * 0.5
+            }
+        }
+        
+        # Generate embedding from campaign name and materials
+        campaign_text = f"{campaign_name} {materials} cleanup campaign"
+        campaign_embedding = embedder.generate_query_embedding(campaign_text)
+        
+        # Store in Qdrant
+        vector_store.store_campaign(
+            embedding=campaign_embedding,
+            campaign_data=campaign,
+            campaign_id=campaign_id
+        )
+        
+        return {
+            "status": "success",
+            "campaign": campaign,
+            "message": f"Campaign '{campaign_name}' created successfully"
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create campaign: {str(e)}")
 
 
 # ============================================================================

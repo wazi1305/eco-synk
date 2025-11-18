@@ -39,8 +39,18 @@ class CampaignService {
     }
 
     const result = await response.json();
-    const campaigns = (result.campaigns || [])
-      .map((payload) => transformQdrantCampaign(payload))
+    const campaigns = await Promise.all(
+      (result.campaigns || []).map(async (payload) => {
+        try {
+          return await transformQdrantCampaign(payload);
+        } catch (error) {
+          console.warn('Failed to transform campaign:', error);
+          return null;
+        }
+      })
+    );
+    
+    const validCampaigns = campaigns
       .filter(Boolean)
       .sort((a, b) => {
         const dateA = new Date(a.timeline?.startDate || a.date || 0).getTime();
@@ -48,7 +58,7 @@ class CampaignService {
         return dateB - dateA;
       });
 
-    return limit ? campaigns.slice(0, limit) : campaigns;
+    return limit ? validCampaigns.slice(0, limit) : validCampaigns;
   }
 
   persistCampaigns(cacheKey, campaigns) {
@@ -256,7 +266,7 @@ class CampaignService {
         throw new Error(`Campaign ${campaignId} not found`);
       }
       const result = await response.json();
-      const campaign = transformQdrantCampaign(result.campaign);
+      const campaign = await transformQdrantCampaign(result.campaign);
 
       if (!campaign) {
         throw new Error('Campaign response was empty');
