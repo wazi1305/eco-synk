@@ -30,9 +30,7 @@ import {
   Tab,
   TabPanel,
 } from '@chakra-ui/react';
-import { FiCalendar, FiTrendingUp, FiAward, FiTarget, FiMapPin, FiZap, FiUser, FiLock } from 'react-icons/fi';
-import { useAuth } from '../contexts/AuthContext';
-import AuthModal from './auth/AuthModal';
+import { FiCalendar, FiTrendingUp, FiAward, FiTarget, FiMapPin, FiZap } from 'react-icons/fi';
 import volunteerService from '../services/volunteerService';
 
 // User data and recent activities
@@ -96,11 +94,8 @@ const ProfilePage = () => {
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const lastScrollYRef = React.useRef(0);
   const progressPercent = Math.round((USER_DATA.currentWeekPoints / USER_DATA.weeklyGoal) * 100);
-  
-  const { user, isAuthenticated } = useAuth();
 
   // Load leaderboard data
   useEffect(() => {
@@ -138,75 +133,6 @@ const ProfilePage = () => {
     lastScrollYRef.current = currentScrollY;
   }, []);
 
-  // Show sign in screen if not authenticated
-  if (!isAuthenticated) {
-    return (
-      <>
-        <Flex direction="column" h="full" bg="gray.50" justify="center" align="center" p={6}>
-          <VStack spacing={6} maxW="sm" w="full">
-            <Circle size="80px" bg="brand.500" fontSize="3xl">
-              <Icon as={FiUser} color="white" />
-            </Circle>
-            
-            <VStack spacing={2} textAlign="center">
-              <Heading size="lg" color="gray.900">Your Profile</Heading>
-              <Text color="gray.600">
-                Sign in to view your eco-impact, track your progress, and connect with the community
-              </Text>
-            </VStack>
-            
-            <VStack spacing={3} w="full">
-              <Button 
-                w="full" 
-                colorScheme="brand" 
-                size="lg" 
-                leftIcon={<Icon as={FiUser} />}
-                onClick={() => setShowAuthModal(true)}
-              >
-                Sign In
-              </Button>
-              <Text fontSize="sm" color="gray.500">
-                New to EcoSynk?{' '}
-                <Button variant="link" size="sm" onClick={() => setShowAuthModal(true)}>
-                  Create Account
-                </Button>
-              </Text>
-            </VStack>
-            
-            <Card w="full" variant="outline">
-              <CardBody>
-                <VStack spacing={3}>
-                  <Text fontSize="sm" fontWeight="semibold" color="gray.700">
-                    What you'll get:
-                  </Text>
-                  <VStack spacing={2} align="start" w="full">
-                    <HStack spacing={2}>
-                      <Icon as={FiTarget} color="brand.500" />
-                      <Text fontSize="sm">Track your cleanup activities</Text>
-                    </HStack>
-                    <HStack spacing={2}>
-                      <Icon as={FiAward} color="brand.500" />
-                      <Text fontSize="sm">Earn points and achievements</Text>
-                    </HStack>
-                    <HStack spacing={2}>
-                      <Icon as={FiTrendingUp} color="brand.500" />
-                      <Text fontSize="sm">See your environmental impact</Text>
-                    </HStack>
-                  </VStack>
-                </VStack>
-              </CardBody>
-            </Card>
-          </VStack>
-        </Flex>
-        
-        <AuthModal 
-          isOpen={showAuthModal} 
-          onClose={() => setShowAuthModal(false)} 
-        />
-      </>
-    );
-  }
-
   return (
     <Flex direction="column" h="full" bg="neutral.900" overflow="hidden" className="safe-area-inset">
       {/* Compact Header - Collapsible */}
@@ -232,12 +158,6 @@ const ProfilePage = () => {
           <VStack align="start" spacing={0} flex={1}>
             <Text fontWeight="600" fontSize="lg" color="neutral.50">{USER_DATA.name}</Text>
             <Text fontSize="xs" color="neutral.400">{USER_DATA.username}</Text>
-          <Circle size="50px" bg="whiteAlpha.20" fontSize="xl">
-            {user?.avatar || USER_DATA.avatar}
-          </Circle>
-          <VStack align="start" spacing={0} flex={1}>
-            <Text fontWeight="bold" fontSize="lg">{user?.name || USER_DATA.name}</Text>
-            <Text fontSize="xs" opacity={0.8}>@{user?.name?.toLowerCase().replace(/\s+/g, '') || USER_DATA.username.slice(1)}</Text>
           </VStack>
           <VStack align="end" spacing={0}>
             <Text fontSize="xl" fontWeight="700" color="brand.500">
@@ -299,13 +219,9 @@ const ProfilePage = () => {
                 {USER_DATA.avatar}
               </Circle>
               <VStack spacing={1} textAlign="center">
-
                 <Heading size="lg" color="neutral.50" fontWeight="700">{USER_DATA.name}</Heading>
                 <Text color="neutral.400" fontSize="sm">{USER_DATA.username}</Text>
                 <HStack spacing={2} color="neutral.400" fontSize="xs">
-                <Heading size="lg" color="gray.900">{user?.name || USER_DATA.name}</Heading>
-                <Text color="gray.600" fontSize="sm">@{user?.name?.toLowerCase().replace(/\s+/g, '') || USER_DATA.username.slice(1)}</Text>
-                <HStack spacing={2} color="gray.500" fontSize="xs">
                   <Icon as={FiMapPin} />
                   <Text>{USER_DATA.location}</Text>
                 </HStack>
@@ -373,7 +289,7 @@ const ProfilePage = () => {
                         {stat.label.toUpperCase()}
                       </Text>
                     </VStack>
-                    <Circle size="40px" bg={`rgba(47, 212, 99, 0.1)`} border="1px solid" borderColor="brand.500">
+                    <Circle size="40px" bg={rgba(47, 212, 99, 0.1)} border="1px solid" borderColor="brand.500">
                       <Icon as={stat.icon} color="brand.500" boxSize={5} />
                     </Circle>
                   </HStack>
@@ -478,10 +394,9 @@ const ProfilePage = () => {
             >
               View Achievements
             </Button>
-          </VStack>
-        </Box>
-            </TabPanel>
-            <TabPanel p={0} pt={4}>
+            </VStack>
+          </Box>
+            </TabPanel>            <TabPanel p={0} pt={4}>
               {/* Leaderboard Section */}
               <Card bg="neutral.800" borderRadius="12px" overflow="hidden" border="1px solid" borderColor="neutral.700" mx={4}>
                 <CardBody p={6}>
@@ -502,7 +417,7 @@ const ProfilePage = () => {
                       <VStack spacing={3} align="stretch">
                         {leaderboard.map((volunteer, index) => (
                           <HStack 
-                            key={volunteer.user_id ? `${volunteer.user_id}-${volunteer.rank || index}` : `vol-${index}`}
+                            key={volunteer.user_id ? ${volunteer.user_id}-${volunteer.rank || index} : vol-${index}}
                             p={4} 
                             bg={index < 3 ? "rgba(47, 212, 99, 0.08)" : "neutral.700"} 
                             borderRadius="12px"
