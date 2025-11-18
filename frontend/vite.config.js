@@ -34,6 +34,9 @@ export default defineConfig({
   ],
   server: {
     host: '0.0.0.0',
+    port: 5173,
     https: true,
+    // Allow both HTTP and HTTPS for mobile testing
+    strictPort: false,
   }
 })

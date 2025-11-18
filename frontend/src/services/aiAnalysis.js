@@ -67,6 +67,75 @@ class AIAnalysisService {
   }
 
   /**
+   * Detect waste using YOLOv8 + Gemini AI hybrid approach
+   * @param {File} imageFile - The image file to analyze
+   * @param {Object} location - Optional GPS coordinates {lat, lon}
+   * @param {string} userNotes - Optional user notes about the image
+   * @param {boolean} useYolo - Whether to use YOLO detection (default: true)
+   * @returns {Promise<Object>} Detection results with annotations
+   */
+  async detectWaste(imageFile, location = null, userNotes = null, useYolo = true) {
+    try {
+      const formData = new FormData();
+      formData.append('file', imageFile);
+      formData.append('use_yolo', useYolo);
+      
+      if (location) {
+        formData.append('location', JSON.stringify(location));
+      }
+      
+      if (userNotes) {
+        formData.append('user_notes', userNotes);
+      }
+      
+      const userId = localStorage.getItem('userId');
+      if (userId) {
+        formData.append('user_id', userId);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/detect-waste`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Detection failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      
+      if (result.report_id) {
+        this.storeReportLocally(result.report_id, result.analysis);
+      }
+
+      return {
+        success: true,
+        data: {
+          analysis: result.analysis,
+          detections: result.detections || [],
+          detection_summary: result.detection_summary || {},
+          annotated_image: result.annotated_image || null
+        },
+        reportId: result.report_id,
+        message: result.message
+      };
+
+    } catch (error) {
+      console.error('Waste Detection Error:', error);
+      return {
+        success: false,
+        error: error.message,
+        data: {
+          analysis: this.getMockAnalysis(),
+          detections: [],
+          detection_summary: {},
+          annotated_image: null
+        }
+      };
+    }
+  }
+
+  /**
    * Batch analyze multiple images
    * @param {File[]} imageFiles - Array of image files
    * @returns {Promise<Object>} Batch analysis results
