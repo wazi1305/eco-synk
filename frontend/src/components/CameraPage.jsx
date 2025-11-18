@@ -36,7 +36,9 @@ const formatCoordinatePair = (lat, lon) => {
   return `${latNum.toFixed(4)}, ${lonNum.toFixed(4)}`;
 };
 
+
 const LIVE_PREVIEW_INTERVAL_MS = 1500;
+
 
 const USER_STATS = {
   points: 420,
@@ -125,6 +127,7 @@ const CameraPage = () => {
     };
   }, [stopLiveDetection]);
 
+
   const locationMetadata = analysisResult?.metadata?.location;
   const locationContext = analysisResult?.metadata?.location_context;
   const locationName = analysisResult?.metadata?.location_name || locationContext?.name || locationContext?.display_name;
@@ -139,9 +142,11 @@ const CameraPage = () => {
         .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
         .join(' ')
     : null;
+
   const liveLatencyLabel = Number.isFinite(liveDetectionLatency)
     ? `${Math.round(liveDetectionLatency)}ms`
     : null;
+
 
   // Simplified scroll handler with debouncing
   const handleScroll = React.useCallback((e) => {

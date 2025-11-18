@@ -26,6 +26,7 @@ from gemini.trash_analyzer import TrashAnalyzer
 from qdrant.vector_store import EcoSynkVectorStore
 from embeddings.generator import EmbeddingGenerator
 from yolo.waste_detector import WasteDetector
+from geocoding import reverse_geocode
 from campaigns import CampaignManager
 =======
 from geocoding import reverse_geocode
@@ -685,6 +686,7 @@ async def detect_waste(
         raise HTTPException(status_code=500, detail=f"Detection failed: {str(e)}")
 
 
+
 @app.post("/detect-waste/live")
 async def detect_waste_live(
     file: UploadFile = File(..., description="Video frame for live waste detection"),
@@ -782,6 +784,7 @@ async def detect_waste_live(
                 temp_path.unlink(missing_ok=True)
             except Exception:
                 pass
+
 
  
 @app.post("/reports/search")
