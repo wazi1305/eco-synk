@@ -79,14 +79,7 @@ const NavigationPage = () => {
       color: 'pink',
       status: 'Real Data'
     },
-    {
-      title: 'Backend Testing',
-      description: 'Live API integration testing interface',
-      path: '/test',
-      icon: FiDatabase,
-      color: 'gray',
-      status: 'Dev Tool'
-    }
+
   ];
 
   return (
@@ -97,11 +90,8 @@ const NavigationPage = () => {
             🌱 EcoSynk Navigation
           </Heading>
           <Text color="gray.600" fontSize="lg">
-            Explore all features with real backend integration
+            Explore all EcoSynk features and join the environmental movement
           </Text>
-          <Badge colorScheme="green" mt={2} px={3} py={1} fontSize="sm">
-            Backend Connected ✅
-          </Badge>
         </Box>
 
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={6}>
@@ -156,36 +146,7 @@ const NavigationPage = () => {
           ))}
         </SimpleGrid>
 
-        <Card bg="brand.50" borderColor="brand.200" borderWidth={1}>
-          <CardBody p={6}>
-            <VStack spacing={4} align="stretch">
-              <HStack>
-                <Icon as={FiSettings} color="brand.500" boxSize={6} />
-                <Heading size="md" color="brand.700">
-                  Real Data Integration Status
-                </Heading>
-              </HStack>
-              
-              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-                <VStack align="start" spacing={2}>
-                  <Text fontWeight="bold" color="gray.700">✅ Connected:</Text>
-                  <Text fontSize="sm" color="gray.600">• Qdrant Vector Database</Text>
-                  <Text fontSize="sm" color="gray.600">• 10 Real Volunteer Profiles</Text>
-                  <Text fontSize="sm" color="gray.600">• AI-powered Matching</Text>
-                  <Text fontSize="sm" color="gray.600">• ESG Metrics API</Text>
-                </VStack>
-                
-                <VStack align="start" spacing={2}>
-                  <Text fontWeight="bold" color="gray.700">🏆 Features:</Text>
-                  <Text fontSize="sm" color="gray.600">• Live Leaderboard Rankings</Text>
-                  <Text fontSize="sm" color="gray.600">• Real Campaign Data</Text>
-                  <Text fontSize="sm" color="gray.600">• Backend API Testing</Text>
-                  <Text fontSize="sm" color="gray.600">• Volunteer Badge System</Text>
-                </VStack>
-              </SimpleGrid>
-            </VStack>
-          </CardBody>
-        </Card>
+
       </VStack>
     </Box>
   );

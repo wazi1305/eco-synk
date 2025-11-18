@@ -34,29 +34,53 @@ const LocationAutocomplete = ({
     }
 
     setIsLoading(true);
+    console.log('Searching for:', query);
+    
     try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`,
-        {
-          headers: {
-            'User-Agent': 'EcoSynk/1.0'
-          }
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=8&addressdetails=1&countrycodes=ae,us,gb,ca,au,in`;
+      console.log('API URL:', url);
+      
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'EcoSynk/1.0 (ecosynk.com)'
         }
-      );
+      });
+      
+      console.log('Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        const formattedSuggestions = data.map(item => ({
-          id: item.place_id,
-          display_name: item.display_name,
-          lat: parseFloat(item.lat),
-          lon: parseFloat(item.lon),
-          address: formatAddress(item.address)
-        }));
+        console.log('API response:', data);
         
-        setSuggestions(formattedSuggestions);
-        setShowSuggestions(true);
-        setSelectedIndex(-1);
+        if (data && data.length > 0) {
+          const formattedSuggestions = data
+            .map(item => ({
+              id: item.place_id,
+              display_name: item.display_name,
+              lat: parseFloat(item.lat),
+              lon: parseFloat(item.lon),
+              address: formatAddress(item.address) || item.display_name,
+              raw: item
+            }))
+            .map(item => ({
+              ...item,
+              score: calculateRelevanceScore(query, item)
+            }))
+            .sort((a, b) => b.score - a.score)
+            .slice(0, 5);
+          
+          console.log('Ranked suggestions:', formattedSuggestions);
+          setSuggestions(formattedSuggestions);
+          setShowSuggestions(true);
+          setSelectedIndex(-1);
+        } else {
+          console.log('No results found');
+          setSuggestions([]);
+          setShowSuggestions(false);
+        }
+      } else {
+        console.error('API request failed:', response.status, response.statusText);
+        setSuggestions([]);
       }
     } catch (error) {
       console.error('Location search failed:', error);
@@ -66,23 +90,76 @@ const LocationAutocomplete = ({
     }
   };
 
+  const calculateRelevanceScore = (query, item) => {
+    const q = query.toLowerCase();
+    const address = item.address.toLowerCase();
+    const displayName = item.display_name.toLowerCase();
+    const raw = item.raw;
+    
+    let score = 0;
+    
+    // Exact match at start gets highest score
+    if (address.startsWith(q) || displayName.startsWith(q)) score += 100;
+    
+    // City/town name matches
+    const city = raw.address?.city?.toLowerCase() || raw.address?.town?.toLowerCase() || '';
+    if (city.startsWith(q)) score += 80;
+    if (city.includes(q)) score += 40;
+    
+    // Country matches (for popular places)
+    const country = raw.address?.country?.toLowerCase() || '';
+    if (country.startsWith(q)) score += 60;
+    
+    // State/region matches
+    const state = raw.address?.state?.toLowerCase() || '';
+    if (state.startsWith(q)) score += 50;
+    
+    // General word match in display name
+    if (displayName.includes(q)) score += 20;
+    
+    // Boost major cities
+    const majorCities = ['dubai', 'new york', 'london', 'paris', 'tokyo', 'sydney', 'toronto', 'mumbai'];
+    if (majorCities.some(city => address.includes(city) || displayName.includes(city))) {
+      score += 30;
+    }
+    
+    // Penalize very long addresses (usually less relevant)
+    if (displayName.length > 100) score -= 10;
+    
+    // Boost if it's a place type we want (city, town, etc.)
+    const placeType = raw.type || '';
+    if (['city', 'town', 'village', 'administrative'].includes(placeType)) {
+      score += 25;
+    }
+    
+    return score;
+  };
+
   const formatAddress = (address) => {
     if (!address) return '';
     
     const parts = [];
-    if (address.house_number && address.road) {
-      parts.push(`${address.house_number} ${address.road}`);
-    } else if (address.road) {
-      parts.push(address.road);
+    
+    // Add city/town first for better readability
+    if (address.city) {
+      parts.push(address.city);
+    } else if (address.town) {
+      parts.push(address.town);
+    } else if (address.village) {
+      parts.push(address.village);
     }
     
-    if (address.city) parts.push(address.city);
-    else if (address.town) parts.push(address.town);
+    // Add state/emirate
+    if (address.state) {
+      parts.push(address.state);
+    }
     
-    if (address.state) parts.push(address.state);
-    if (address.country) parts.push(address.country);
+    // Add country
+    if (address.country) {
+      parts.push(address.country);
+    }
     
-    return parts.join(', ');
+    return parts.length > 0 ? parts.join(', ') : '';
   };
 
   const handleInputChange = (e) => {

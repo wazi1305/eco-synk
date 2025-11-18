@@ -31,6 +31,8 @@ import JoinCampaignModal from './JoinCampaignModal';
 import CreateCampaignForm from './CreateCampaignForm';
 import campaignService from '../../services/campaignService';
 import { normalizeCampaignForUI } from '../../utils/campaignFormatter';
+import { useAuth } from '../../contexts/AuthContext';
+import AuthModal from '../auth/AuthModal';
 
 // Campaign list component
 const CampaignList = ({
@@ -81,7 +83,9 @@ const CampaignList = ({
 
 
 const CampaignsPage = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [campaigns, setCampaigns] = useState([]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
@@ -222,6 +226,10 @@ const CampaignsPage = () => {
   }, [dataSource]);
 
   const handleDonate = (campaign) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setSelectedCampaign(campaign);
     setShowDonationModal(true);
   };
@@ -232,8 +240,20 @@ const CampaignsPage = () => {
   };
 
   const handleJoinCampaign = (campaign) => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     setSelectedCampaign(campaign);
     setShowJoinModal(true);
+  };
+
+  const handleCreateCampaign = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    setShowCreateForm(true);
   };
 
   const handleDonationSubmit = (amount) => {
@@ -366,31 +386,13 @@ const CampaignsPage = () => {
             direction={{ base: 'column', md: 'row' }}
             gap={3}
           >
-            <HStack spacing={3} flexWrap="wrap">
-              {sourceLabel && (
-                <Badge
-                  colorScheme={dataSource === 'local-cache' ? 'yellow' : 'whiteAlpha'}
-                  borderRadius="full"
-                  px={3}
-                  py={1}
-                  fontSize="xs"
-                  textTransform="none"
-                >
-                  {sourceLabel}
-                </Badge>
-              )}
-              {lastUpdated && (
-                <Text fontSize="xs" color="whiteAlpha.800">
-                  Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-              )}
-            </HStack>
+            <Box />
 
             <HStack spacing={2}>
               <Button
                 size="sm"
                 colorScheme="whiteAlpha"
-                onClick={() => setShowCreateForm(true)}
+                onClick={handleCreateCampaign}
                 borderRadius="full"
               >
                 + Create
@@ -417,7 +419,7 @@ const CampaignsPage = () => {
         flex="1" 
         overflowY="auto"
         onScroll={handleScroll}
-        pt={showHeader ? "220px" : "20px"}
+        pt={showHeader ? "280px" : "20px"}
         pb="80px"
         transition="padding-top 0.3s ease"
         position="relative"
@@ -499,6 +501,12 @@ const CampaignsPage = () => {
         isOpen={showCreateForm}
         onClose={() => setShowCreateForm(false)}
         onSuccess={handleCampaignCreated}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
       />
     </Flex>
   );
