@@ -42,17 +42,33 @@ class AIAnalysisService {
       }
 
       const result = await response.json();
-      
+
+      const responseLocation = result.location || result.analysis?.metadata?.location || location || null;
+      if (result.analysis) {
+        result.analysis.metadata = result.analysis.metadata || {};
+        if (responseLocation) {
+          const existingLocation = result.analysis.metadata.location || {};
+          result.analysis.metadata.location = { ...existingLocation, ...responseLocation };
+        }
+        if (result.location?.name) {
+          result.analysis.metadata.location_name = result.location.name;
+        }
+        if (result.location?.context) {
+          result.analysis.metadata.location_context = result.location.context;
+        }
+      }
+
       // Store report ID for future reference
       if (result.report_id) {
-        this.storeReportLocally(result.report_id, result.analysis);
+        this.storeReportLocally(result.report_id, result.analysis, responseLocation);
       }
 
       return {
         success: true,
         data: result.analysis,
         reportId: result.report_id,
-        message: result.message
+        message: result.message,
+        location: responseLocation
       };
 
     } catch (error) {
@@ -103,9 +119,24 @@ class AIAnalysisService {
       }
 
       const result = await response.json();
-      
+
+      const responseLocation = result.location || result.analysis?.metadata?.location || location || null;
+      if (result.analysis) {
+        result.analysis.metadata = result.analysis.metadata || {};
+        if (responseLocation) {
+          const existingLocation = result.analysis.metadata.location || {};
+          result.analysis.metadata.location = { ...existingLocation, ...responseLocation };
+        }
+        if (result.location?.name) {
+          result.analysis.metadata.location_name = result.location.name;
+        }
+        if (result.location?.context) {
+          result.analysis.metadata.location_context = result.location.context;
+        }
+      }
+
       if (result.report_id) {
-        this.storeReportLocally(result.report_id, result.analysis);
+        this.storeReportLocally(result.report_id, result.analysis, responseLocation);
       }
 
       return {
@@ -114,10 +145,12 @@ class AIAnalysisService {
           analysis: result.analysis,
           detections: result.detections || [],
           detection_summary: result.detection_summary || {},
-          annotated_image: result.annotated_image || null
+          annotated_image: result.annotated_image || null,
+          location: responseLocation
         },
         reportId: result.report_id,
-        message: result.message
+        message: result.message,
+        location: responseLocation
       };
 
     } catch (error) {
@@ -131,6 +164,66 @@ class AIAnalysisService {
           detection_summary: {},
           annotated_image: null
         }
+      };
+    }
+  }
+
+  /**
+   * Run lightweight YOLO detection on a live video frame
+   * @param {Blob|File} frameBlob - Frame image to analyze (JPEG recommended)
+   * @param {Object} location - Optional GPS coordinates {lat, lon}
+   * @param {Object} options - Additional options { includeSummary, signal }
+   * @returns {Promise<Object>} Live detection results
+   */
+  async detectLiveFrame(frameBlob, location = null, options = {}) {
+    try {
+      if (!frameBlob) {
+        throw new Error('Missing frame data for live detection');
+      }
+
+      const formData = new FormData();
+      const fileLike = frameBlob instanceof File
+        ? frameBlob
+        : new File([frameBlob], 'frame.jpg', { type: frameBlob.type || 'image/jpeg' });
+
+      formData.append('file', fileLike);
+
+      if (location) {
+        formData.append('location', JSON.stringify(location));
+      }
+
+      if (options.includeSummary === false) {
+        formData.append('include_summary', 'false');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/detect-waste/live`, {
+        method: 'POST',
+        body: formData,
+        signal: options.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`Live detection failed: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      return {
+        success: true,
+        detections: result.detections || [],
+        detectionSummary: result.detection_summary || null,
+        frameDimensions: result.frame_dimensions || null,
+        latencyMs: result.latency_ms ?? null
+      };
+
+    } catch (error) {
+      console.error('Live Detection Error:', error);
+      return {
+        success: false,
+        error: error.message,
+        detections: [],
+        detectionSummary: null,
+        frameDimensions: null
       };
     }
   }
@@ -301,12 +394,13 @@ class AIAnalysisService {
    * Store report data locally for offline access
    * @private
    */
-  storeReportLocally(reportId, analysisData) {
+  storeReportLocally(reportId, analysisData, location = null) {
     try {
       const reports = JSON.parse(localStorage.getItem('userReports') || '[]');
       reports.push({
         id: reportId,
         analysis: analysisData,
+        location: location || analysisData?.metadata?.location || null,
         timestamp: new Date().toISOString()
       });
       

@@ -1,4 +1,4 @@
-﻿import React, { useRef, useState, useEffect } from 'react';
+﻿import React, { useRef, useState, useEffect, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import {
   Box,
@@ -24,6 +24,19 @@ import {
 } from '@chakra-ui/react';
 import { FiCamera, FiImage, FiStar, FiMapPin, FiUsers, FiAlertCircle } from 'react-icons/fi';
 import aiAnalysisService from '../services/aiAnalysis';
+
+const formatCoordinatePair = (lat, lon) => {
+  const latNum = typeof lat === 'number' ? lat : Number(lat);
+  const lonNum = typeof lon === 'number' ? lon : Number(lon);
+
+  if (!Number.isFinite(latNum) || !Number.isFinite(lonNum)) {
+    return null;
+  }
+
+  return `${latNum.toFixed(4)}, ${lonNum.toFixed(4)}`;
+};
+
+const LIVE_PREVIEW_INTERVAL_MS = 1500;
 
 const USER_STATS = {
   points: 420,
@@ -52,9 +65,83 @@ const CameraPage = () => {
   const [selectedDeviceId, setSelectedDeviceId] = useState(null);
   const [detections, setDetections] = useState([]);
   const [annotatedImage, setAnnotatedImage] = useState(null);
+  const [liveDetections, setLiveDetections] = useState([]);
+  const [liveDetectionError, setLiveDetectionError] = useState(null);
+  const [liveDetectionLatency, setLiveDetectionLatency] = useState(null);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const lastScrollYRef = useRef(0);
   const scrollTimeoutRef = useRef(null);
+  const overlayCanvasRef = useRef(null);
+  const liveDetectionIntervalRef = useRef(null);
+  const liveDetectionInFlightRef = useRef(false);
   const toast = useToast();
+
+  const stopLiveDetection = useCallback((clearOverlay = false) => {
+    if (liveDetectionIntervalRef.current) {
+      clearInterval(liveDetectionIntervalRef.current);
+      liveDetectionIntervalRef.current = null;
+    }
+    liveDetectionInFlightRef.current = false;
+
+    if (clearOverlay) {
+      setLiveDetections([]);
+      setLiveDetectionLatency(null);
+      setLiveDetectionError(null);
+    }
+  }, []);
+
+  const captureFrameBlob = useCallback(() => {
+    const videoElement = webcamRef.current?.video;
+    if (!videoElement || videoElement.readyState < 2) {
+      return Promise.resolve(null);
+    }
+
+    const { videoWidth, videoHeight } = videoElement;
+    if (!videoWidth || !videoHeight) {
+      return Promise.resolve(null);
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = videoWidth;
+    canvas.height = videoHeight;
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return Promise.resolve(null);
+    }
+
+    context.drawImage(videoElement, 0, 0, videoWidth, videoHeight);
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/jpeg', 0.8);
+    });
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopLiveDetection();
+    };
+  }, [stopLiveDetection]);
+
+  const locationMetadata = analysisResult?.metadata?.location;
+  const locationContext = analysisResult?.metadata?.location_context;
+  const locationName = analysisResult?.metadata?.location_name || locationContext?.name || locationContext?.display_name;
+  const locationDisplayName = locationContext?.display_name;
+  const locationCoordinatesLabel = locationMetadata
+    ? formatCoordinatePair(locationMetadata.lat, locationMetadata.lon)
+    : null;
+  const locationSource = locationContext?.source;
+  const locationSourceLabel = locationSource
+    ? locationSource
+        .split('_')
+        .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+        .join(' ')
+    : null;
+  const liveLatencyLabel = Number.isFinite(liveDetectionLatency)
+    ? `${Math.round(liveDetectionLatency)}ms`
+    : null;
 
   // Simplified scroll handler with debouncing
   const handleScroll = React.useCallback((e) => {
@@ -142,9 +229,184 @@ const CameraPage = () => {
     getLocation();
   }, []);
 
+  useEffect(() => {
+    setIsVideoReady(false);
+  }, [selectedDeviceId]);
+
+  useEffect(() => {
+    if (selectedDeviceId) {
+      stopLiveDetection(true);
+    }
+  }, [selectedDeviceId, stopLiveDetection]);
+
+  useEffect(() => {
+    if (capturedImage || useFileUpload || cameraError) {
+      stopLiveDetection(true);
+      setIsVideoReady(false);
+    }
+  }, [capturedImage, useFileUpload, cameraError, stopLiveDetection]);
+
+  useEffect(() => {
+    const shouldRunLivePreview = !useFileUpload && !cameraError && !capturedImage && !isAnalyzing && isVideoReady;
+
+    if (!shouldRunLivePreview) {
+      stopLiveDetection();
+      return;
+    }
+
+    let cancelled = false;
+
+    const runDetection = async () => {
+      if (cancelled || liveDetectionInFlightRef.current) {
+        return;
+      }
+
+      const frameBlob = await captureFrameBlob();
+      if (!frameBlob || cancelled) {
+        return;
+      }
+
+      liveDetectionInFlightRef.current = true;
+
+      try {
+        const result = await aiAnalysisService.detectLiveFrame(frameBlob, location, {
+          includeSummary: false
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        if (result.success) {
+          setLiveDetections(result.detections || []);
+          setLiveDetectionLatency(result.latencyMs ?? null);
+          setLiveDetectionError(null);
+        } else if (result.error) {
+          setLiveDetectionError(result.error);
+          setLiveDetections([]);
+          setLiveDetectionLatency(null);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setLiveDetectionError(error.message || 'Live detection failed');
+          setLiveDetections([]);
+          setLiveDetectionLatency(null);
+        }
+      } finally {
+        liveDetectionInFlightRef.current = false;
+      }
+    };
+
+    runDetection();
+    liveDetectionIntervalRef.current = setInterval(runDetection, LIVE_PREVIEW_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      if (liveDetectionIntervalRef.current) {
+        clearInterval(liveDetectionIntervalRef.current);
+        liveDetectionIntervalRef.current = null;
+      }
+      liveDetectionInFlightRef.current = false;
+    };
+  }, [useFileUpload, cameraError, capturedImage, isAnalyzing, isVideoReady, location, captureFrameBlob, stopLiveDetection]);
+
+  useEffect(() => {
+    const canvas = overlayCanvasRef.current;
+    const videoElement = webcamRef.current?.video;
+
+    if (!canvas) {
+      return;
+    }
+
+    const context = canvas.getContext('2d');
+    if (!context) {
+      return;
+    }
+
+    const clearCanvas = () => {
+      context.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    if (!videoElement) {
+      clearCanvas();
+      return;
+    }
+
+    const displayWidth = videoElement.clientWidth || videoElement.videoWidth || 0;
+    const displayHeight = videoElement.clientHeight || videoElement.videoHeight || 0;
+
+    if (!displayWidth || !displayHeight) {
+      canvas.width = 0;
+      canvas.height = 0;
+      clearCanvas();
+      return;
+    }
+
+    if (canvas.width !== displayWidth || canvas.height !== displayHeight) {
+      canvas.width = displayWidth;
+      canvas.height = displayHeight;
+    } else {
+      clearCanvas();
+    }
+
+    if (!liveDetections || liveDetections.length === 0) {
+      clearCanvas();
+      return;
+    }
+
+    const naturalWidth = videoElement.videoWidth || displayWidth;
+    const naturalHeight = videoElement.videoHeight || displayHeight;
+
+    const scaleX = naturalWidth ? canvas.width / naturalWidth : 1;
+    const scaleY = naturalHeight ? canvas.height / naturalHeight : 1;
+
+    context.lineWidth = 2;
+    context.lineJoin = 'round';
+    context.lineCap = 'round';
+    context.font = '14px "Inter", sans-serif';
+    context.textBaseline = 'top';
+
+    liveDetections.forEach((detection) => {
+      const bbox = detection?.bbox;
+      if (!bbox) {
+        return;
+      }
+
+      const x = (bbox.x1 || 0) * scaleX;
+      const y = (bbox.y1 || 0) * scaleY;
+      const width = (bbox.width || 0) * scaleX;
+      const height = (bbox.height || 0) * scaleY;
+
+      context.strokeStyle = 'rgba(56, 161, 105, 0.95)';
+      context.strokeRect(x, y, width, height);
+
+      const labelClass = detection?.class || detection?.coco_class || 'trash';
+      const friendlyClass = labelClass.replace(/_/g, ' ');
+      const confidence = detection?.confidence ? `${Math.round(detection.confidence * 100)}%` : '';
+      const label = confidence ? `${friendlyClass} ${confidence}` : friendlyClass;
+
+      const paddingX = 6;
+      const paddingY = 4;
+      const textMetrics = context.measureText(label);
+      const labelWidth = textMetrics.width + paddingX * 2;
+      const labelHeight = 18 + paddingY;
+      const labelX = x;
+      const labelY = Math.max(0, y - labelHeight);
+
+      context.fillStyle = 'rgba(56, 161, 105, 0.85)';
+      context.fillRect(labelX, labelY, labelWidth, labelHeight);
+
+      context.fillStyle = '#0B1F17';
+      context.fillText(label, labelX + paddingX, labelY + paddingY / 2);
+    });
+
+  }, [liveDetections, windowHeight, isVideoReady]);
+
   const handleUserMedia = () => {
     setCameraError(null);
     setUseFileUpload(false);
+    setIsVideoReady(true);
+    setLiveDetectionError(null);
   };
 
   const handleUserMediaError = (error) => {
@@ -155,6 +417,8 @@ const CameraPage = () => {
       : 'Camera access unavailable';
     setCameraError(errorMsg);
     setUseFileUpload(true);
+    setIsVideoReady(false);
+    stopLiveDetection(true);
   };
 
   const capture = () => {
@@ -495,6 +759,57 @@ const CameraPage = () => {
                   mirrored={false}
                 />
 
+                <canvas
+                  ref={overlayCanvasRef}
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'none',
+                    zIndex: 5,
+                  }}
+                />
+
+                {liveDetectionError && !useFileUpload && !capturedImage && (
+                  <Box
+                    position="absolute"
+                    top={4}
+                    left={4}
+                    zIndex={10}
+                    bg="red.600"
+                    color="white"
+                    px={3}
+                    py={2}
+                    borderRadius="md"
+                    shadow="lg"
+                  >
+                    <HStack spacing={2} align="center">
+                      <Icon as={FiAlertCircle} />
+                      <Text fontSize="xs">Live preview unavailable</Text>
+                    </HStack>
+                  </Box>
+                )}
+
+                {liveDetections.length > 0 && !useFileUpload && !capturedImage && !cameraError && (
+                  <Badge
+                    position="absolute"
+                    top={4}
+                    right={4}
+                    zIndex={10}
+                    colorScheme="green"
+                    fontSize="sm"
+                    px={3}
+                    py={1}
+                    borderRadius="full"
+                    bg="green.500"
+                    color="white"
+                  >
+                    {`Live: ${liveDetections.length} ${liveDetections.length === 1 ? 'item' : 'items'}`}
+                    {liveLatencyLabel ? ` • ${liveLatencyLabel}` : ''}
+                  </Badge>
+                )}
+
                 {isFlashing && <Box position="absolute" inset={0} bg="white" opacity={0.7} pointerEvents="none" />}
 
                 <Center position="absolute" inset={0} pointerEvents="none">
@@ -609,6 +924,29 @@ const CameraPage = () => {
                     <CardBody p={6}>
                       <VStack spacing={4} align="stretch">
                         <Heading size="md" color="gray.900">Analysis Results</Heading>
+
+                        {(locationName || locationCoordinatesLabel) && (
+                          <Box p={3} bg="green.50" borderRadius="lg">
+                            <HStack align="start" spacing={3}>
+                              <Icon as={FiMapPin} color="green.600" mt={0.5} />
+                              <VStack align="start" spacing={0}>
+                                <Text fontSize="sm" fontWeight="semibold" color="green.700">Location</Text>
+                                {locationName && (
+                                  <Text fontSize="sm" color="green.900">{locationName}</Text>
+                                )}
+                                {locationDisplayName && locationDisplayName !== locationName && (
+                                  <Text fontSize="xs" color="green.600">{locationDisplayName}</Text>
+                                )}
+                                {locationCoordinatesLabel && (
+                                  <Text fontSize="xs" color="green.500">{locationCoordinatesLabel}</Text>
+                                )}
+                                {locationSourceLabel && (
+                                  <Text fontSize="2xs" color="green.500">Source: {locationSourceLabel}</Text>
+                                )}
+                              </VStack>
+                            </HStack>
+                          </Box>
+                        )}
                         
                         <HStack justify="space-between" p={3} bg="gray.50" borderRadius="lg">
                           <Text fontSize="sm" fontWeight="semibold" color="gray.700">Material Type</Text>

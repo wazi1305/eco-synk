@@ -78,58 +78,63 @@ SAMPLE_TRASH_REPORTS = [
     {
         "primary_material": "plastic",
         "estimated_volume": "large",
-        "specific_items": ["water bottles", "plastic bags", "food containers"],
-        "description": "Large accumulation of plastic waste near riverbank",
-        "cleanup_priority_score": 8,
+        "specific_items": ["single-use bottles", "food wrappers", "plastic bags"],
+        "description": "High tide left a belt of plastic litter behind the safety barriers at Jumeirah Beach Park.",
+        "cleanup_priority_score": 9,
         "environmental_risk_level": "high",
-        "recommended_equipment": ["gloves", "trash bags", "picker tools"],
-        "location": {"lat": 37.7750, "lon": -122.4190}
-    },
-    {
-        "primary_material": "metal",
-        "estimated_volume": "medium",
-        "specific_items": ["cans", "metal scraps", "wire"],
-        "description": "Scattered metal debris in urban park",
-        "cleanup_priority_score": 6,
-        "environmental_risk_level": "medium",
-        "recommended_equipment": ["gloves", "metal detector", "bags"],
-        "location": {"lat": 37.7800, "lon": -122.4100}
+        "recommended_equipment": ["gloves", "reusable sacks", "picker tools"],
+        "location": {"lat": 25.2175, "lon": 55.2713}
     },
     {
         "primary_material": "hazardous",
-        "estimated_volume": "small",
-        "specific_items": ["batteries", "paint cans", "chemicals"],
-        "description": "Hazardous waste dumped illegally",
+        "estimated_volume": "medium",
+        "specific_items": ["paint cans", "oil-soaked rags", "cleaning solvents"],
+        "description": "Improperly stored maintenance supplies leaking near Dubai Creek service docks.",
         "cleanup_priority_score": 10,
         "environmental_risk_level": "critical",
-        "recommended_equipment": ["hazmat suit", "containment bins", "safety gear"],
-        "location": {"lat": 37.7650, "lon": -122.4300}
+        "recommended_equipment": ["hazmat suit", "absorbent boom", "sealed barrels"],
+        "location": {"lat": 25.1998, "lon": 55.2867}
     },
     {
-        "primary_material": "organic",
-        "estimated_volume": "medium",
-        "specific_items": ["food waste", "yard trimmings", "compostables"],
-        "description": "Organic waste dumped near community garden",
-        "cleanup_priority_score": 4,
-        "environmental_risk_level": "low",
-        "recommended_equipment": ["gloves", "compost bags"],
-        "location": {"lat": 37.7550, "lon": -122.4400}
+        "primary_material": "glass",
+        "estimated_volume": "small",
+        "specific_items": ["broken bottles", "glass shards", "beverage containers"],
+        "description": "Broken glass scattered around the seating area of Safa Park after weekend events.",
+        "cleanup_priority_score": 6,
+        "environmental_risk_level": "medium",
+        "recommended_equipment": ["heavy-duty gloves", "rigid bins", "broom"],
+        "location": {"lat": 25.1879, "lon": 55.2641}
+    },
+    {
+        "primary_material": "metal",
+        "estimated_volume": "large",
+        "specific_items": ["rebar offcuts", "rusted drums", "scrap sheets"],
+        "description": "Construction scrap staged illegally along Al Quoz industrial service road.",
+        "cleanup_priority_score": 7,
+        "environmental_risk_level": "high",
+        "recommended_equipment": ["steel-toe boots", "magnet sweeper", "flatbed truck"],
+        "location": {"lat": 25.1354, "lon": 55.2599}
     },
     {
         "primary_material": "electronic",
-        "estimated_volume": "small",
-        "specific_items": ["old phones", "computer parts", "cables"],
-        "description": "E-waste illegally disposed",
-        "cleanup_priority_score": 7,
+        "estimated_volume": "medium",
+        "specific_items": ["discarded tablets", "power adapters", "fiber cable reels"],
+        "description": "E-waste pile discovered beside Business Bay canal maintenance walkway.",
+        "cleanup_priority_score": 8,
         "environmental_risk_level": "high",
-        "recommended_equipment": ["gloves", "e-waste containers", "tools"],
-        "location": {"lat": 37.7700, "lon": -122.4250}
+        "recommended_equipment": ["anti-static bags", "plastic crates", "hand truck"],
+        "location": {"lat": 25.1862, "lon": 55.3136}
     }
 ]
 
 
-def create_mock_data():
-    """Create and upload mock data to Qdrant"""
+def create_mock_data(recreate_collections: bool = False):
+    """Create and upload mock data to Qdrant.
+
+    Args:
+        recreate_collections: When True, existing Qdrant collections are
+            dropped and re-created before inserting the mock data.
+    """
     
     print("\n" + "=" * 60)
     print("🏗️  Creating Mock Data for EcoSynk")
@@ -140,7 +145,7 @@ def create_mock_data():
     try:
         embedder = EmbeddingGenerator()
         vector_store = EcoSynkVectorStore()
-        vector_store.setup_collections(recreate=False)
+        vector_store.setup_collections(recreate=recreate_collections)
         print("✅ Services initialized")
     except Exception as e:
         print(f"❌ Initialization failed: {e}")
@@ -313,6 +318,17 @@ def create_mock_data():
 
 
 if __name__ == "__main__":
-    success = create_mock_data()
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Populate Qdrant with mock data")
+    parser.add_argument(
+        "--recreate",
+        action="store_true",
+        help="Drop and recreate Qdrant collections before inserting mocks"
+    )
+
+    args = parser.parse_args()
+
+    success = create_mock_data(recreate_collections=args.recreate)
     sys.exit(0 if success else 1)
 

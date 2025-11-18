@@ -88,6 +88,20 @@ class EcoSynkVectorStore:
                     )
                 )
                 print(f"✅ Created: {settings.trash_reports_collection}")
+
+            try:
+                self.client.create_payload_index(
+                    collection_name=settings.trash_reports_collection,
+                    field_name="location",
+                    field_schema=PayloadSchemaType.GEO
+                )
+                print(f"   ✓ Configured geo-point index for report location field")
+            except Exception as e:
+                message = str(e).lower()
+                if "already exists" in message:
+                    print(f"   ✓ Geo index already present for report location")
+                else:
+                    print(f"   ⚠️  Could not create trash report geo-index: {e}")
             
             # Volunteer Profiles Collection
             if settings.volunteer_profiles_collection in existing_names:
@@ -171,6 +185,19 @@ class EcoSynkVectorStore:
             
             # Store the report_id in metadata for retrieval
             metadata['report_id'] = report_id
+
+            # Ensure location is available at top-level for geo queries
+            location = metadata.get('location')
+            if not location or location.get('lat') is None or location.get('lon') is None:
+                nested_location = metadata.get('metadata', {}).get('location') if isinstance(metadata.get('metadata'), dict) else None
+                if nested_location and nested_location.get('lat') is not None and nested_location.get('lon') is not None:
+                    try:
+                        metadata['location'] = {
+                            'lat': float(nested_location['lat']),
+                            'lon': float(nested_location['lon'])
+                        }
+                    except (TypeError, ValueError):
+                        pass  # Leave location unset if conversion fails
             
             point = PointStruct(
                 id=str(uuid.uuid4()),  # Use UUID for Qdrant
@@ -212,16 +239,36 @@ class EcoSynkVectorStore:
             List of similar reports with scores
         """
         try:
-            query_filter = None
-            
+            conditions = []
+
+            if location_filter:
+                lat = location_filter.get('lat')
+                lon = location_filter.get('lon')
+                radius_km = location_filter.get('radius_km', 5.0)
+                if lat is not None and lon is not None:
+                    try:
+                        conditions.append(
+                            FieldCondition(
+                                key="location",
+                                geo_radius=GeoRadius(
+                                    center=GeoPoint(lat=lat, lon=lon),
+                                    radius=radius_km * 1000
+                                )
+                            )
+                        )
+                        print(f"   Using geo filter for reports: {radius_km}km radius")
+                    except Exception as geo_error:
+                        print(f"   ⚠️  Failed to apply geo filter: {geo_error}")
+
+            query_filter = Filter(must=conditions) if conditions else None
+
             # Note: Time filtering done in post-processing because timestamps are strings
-            # Qdrant's Range filter requires numeric fields
-            from qdrant_client.models import QueryRequest
             results = self.client.query_points(
                 collection_name=settings.trash_reports_collection,
                 query=embedding,
                 limit=limit * 2,  # Get more results for post-filtering
-                score_threshold=score_threshold
+                score_threshold=score_threshold,
+                query_filter=query_filter
             ).points
             
             # Format results and apply time filter in post-processing
