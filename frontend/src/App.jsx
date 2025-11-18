@@ -104,15 +104,6 @@ function App() {
   }
 
   return (
-
-    <Flex
-      direction="column"
-      bg="neutral.900"
-      height={windowHeight}
-      className="app-container safe-area-inset"
-      position="relative"
-    >
-
     <AuthProvider>
       <Flex
         direction="column"

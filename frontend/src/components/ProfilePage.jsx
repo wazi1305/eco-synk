@@ -478,9 +478,10 @@ const ProfilePage = () => {
             >
               View Achievements
             </Button>
-            </VStack>
-          </Box>
-            </TabPanel>            <TabPanel p={0} pt={4}>
+          </VStack>
+        </Box>
+            </TabPanel>
+            <TabPanel p={0} pt={4}>
               {/* Leaderboard Section */}
               <Card bg="neutral.800" borderRadius="12px" overflow="hidden" border="1px solid" borderColor="neutral.700" mx={4}>
                 <CardBody p={6}>

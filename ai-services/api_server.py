@@ -131,7 +131,12 @@ app = FastAPI(
 # CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For hackathon - restrict in production
+    allow_origins=[
+        "*",  # For hackathon - restrict in production
+        "https://eco-synk-fj59-nf09njo7e-wazi1305s-projects.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
