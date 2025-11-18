@@ -22,6 +22,7 @@ httpx>=0.26.0
 pillow>=10.2.0
 numpy>=1.24.3
 torch>=2.0.0
+PyJWT>=2.8.0
 
 # Development & Testing
 pytest>=7.4.3
