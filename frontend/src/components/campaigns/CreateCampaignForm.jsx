@@ -35,6 +35,7 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
     campaign_name: '',
     description: '',
     location: { lat: 25.2048, lon: 55.2708 }, // Default Dubai coordinates
+    location_label: 'Dubai, UAE',
     target_funding_usd: 500,
     volunteer_goal: 10,
     duration_days: 30,
@@ -131,6 +132,7 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
         handleInputChange('location', { lat: latitude, lon: longitude });
         const locationText = await reverseGeocode(latitude, longitude);
         setLocationName(locationText);
+        handleInputChange('location_label', locationText);
         toast({
           title: 'Location updated',
           description: `Campaign location set to ${locationText}`,
@@ -202,7 +204,9 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
       if (result.success) {
         toast({
           title: 'Campaign Created!',
-          description: result.message || 'Your campaign has been created successfully',
+          description: result.bannerGenerated
+            ? `${result.message || 'Your campaign has been created successfully'} Banner image generated automatically.`
+            : result.message || 'Your campaign has been created successfully',
           status: 'success',
           duration: 5000,
           isClosable: true,
@@ -216,12 +220,14 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
           campaign_name: '',
           description: '',
           location: { lat: 25.2048, lon: 55.2708 },
+          location_label: 'Dubai, UAE',
           target_funding_usd: 500,
           volunteer_goal: 10,
           duration_days: 30,
           estimated_waste_kg: 50,
           materials: 'mixed'
         });
+        setLocationName('Dubai, UAE');
       } else {
         throw new Error(result.error || 'Failed to create campaign');
       }
@@ -273,10 +279,15 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
                 <VStack spacing={2} align="stretch">
                   <LocationAutocomplete
                     value={locationName}
-                    onChange={setLocationName}
+                    onChange={(value) => {
+                      setLocationName(value);
+                      handleInputChange('location_label', value);
+                    }}
                     onLocationSelect={(location) => {
                       handleInputChange('location', { lat: location.lat, lon: location.lon });
-                      setLocationName(location.address);
+                      const label = location.address || location.label || location.name || `${location.lat.toFixed?.(3) ?? location.lat}, ${location.lon.toFixed?.(3) ?? location.lon}`;
+                      setLocationName(label);
+                      handleInputChange('location_label', label);
                     }}
                     placeholder="Enter campaign location..."
                   />

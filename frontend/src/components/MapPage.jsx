@@ -20,6 +20,7 @@ import {
   Alert,
   AlertIcon,
   Tooltip,
+  Image,
 } from '@chakra-ui/react';
 import { FiMaximize2, FiMinimize2, FiMapPin, FiRefreshCw, FiCalendar, FiUsers } from 'react-icons/fi';
 import MapView from './map/MapView';
@@ -158,14 +159,14 @@ const MapPage = () => {
 
   if (loading) {
     return (
-      <Container maxW="container.xl" py={8}>
+      <Container maxW="container.xl" py={8} bg="neutral.900" minH="100vh">
         <VStack spacing={6} align="center" justify="center" h="50vh">
           <Spinner size="xl" color="brand.500" thickness="4px" />
           <VStack spacing={2} textAlign="center">
-            <Heading size="md" color="gray.700">
+            <Heading size="md" color="neutral.50" fontWeight="700">
               Loading campaign map...
             </Heading>
-            <Text color="gray.500">
+            <Text color="neutral.400">
               Fetching cleanup campaigns in your area
             </Text>
           </VStack>
@@ -177,7 +178,7 @@ const MapPage = () => {
   // Fullscreen view
   if (isFullscreen) {
     return (
-      <Box position="fixed" top="0" left="0" right="0" bottom="0" zIndex="1400" bg="white">
+      <Box position="fixed" top="0" left="0" right="0" bottom="0" zIndex="1400" bg="neutral.900">
         {/* Fullscreen close button */}
         <IconButton
           icon={<FiMinimize2 />}
@@ -217,6 +218,7 @@ const MapPage = () => {
     <Box 
       w="100%" 
       minH="calc(100vh - 80px)" // Minimum height to fill screen minus nav
+      bg="neutral.900"
       overflowX="hidden"
       pb="80px" // Account for bottom navigation
       px={{ base: 2, md: 4 }}
@@ -227,10 +229,10 @@ const MapPage = () => {
         <Box>
           <HStack justify="space-between" align={{ base: 'flex-start', md: 'center' }} spacing={{ base: 2, md: 4 }} flexWrap="wrap">
             <Box flex={1}>
-              <Heading size={{ base: 'md', md: 'lg' }} mb={1}>
+              <Heading size={{ base: 'md', md: 'lg' }} mb={1} color="neutral.50" fontWeight="700">
                 Campaign Map
               </Heading>
-              <Text color="gray.600" fontSize={{ base: 'sm', md: 'md' }} display={{ base: 'none', md: 'block' }}>
+              <Text color="neutral.400" fontSize={{ base: 'sm', md: 'md' }} display={{ base: 'none', md: 'block' }}>
                 Discover cleanup campaigns in your area and join the environmental movement
               </Text>
             </Box>
@@ -251,15 +253,15 @@ const MapPage = () => {
         {(error || warning) && (
           <Box>
             {error && (
-              <Alert status="error" borderRadius="lg" mb={warning ? 3 : 0}>
-                <AlertIcon />
-                {error}
+              <Alert status="error" borderRadius="12px" mb={warning ? 3 : 0} bg="rgba(245, 101, 101, 0.1)" border="1px solid" borderColor="red.500">
+                <AlertIcon color="red.400" />
+                <Text color="neutral.200">{error}</Text>
               </Alert>
             )}
             {warning && (
-              <Alert status="warning" borderRadius="lg">
-                <AlertIcon />
-                {warning}
+              <Alert status="warning" borderRadius="12px" bg="rgba(237, 137, 54, 0.1)" border="1px solid" borderColor="orange.500">
+                <AlertIcon color="orange.400" />
+                <Text color="neutral.200">{warning}</Text>
               </Alert>
             )}
           </Box>
@@ -267,33 +269,33 @@ const MapPage = () => {
 
         {/* Stats */}
         <SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: 2, md: 4 }}>
-          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Total Campaigns</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="brand.600">{stats.total}</StatNumber>
+          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Total Campaigns</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="brand.500" fontWeight="700">{stats.total}</StatNumber>
           </Stat>
-          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Active</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="green.600">{stats.active}</StatNumber>
+          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Active</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="green.400" fontWeight="700">{stats.active}</StatNumber>
           </Stat>
-          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Volunteers</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="blue.600">{stats.volunteers}</StatNumber>
+          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Volunteers</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="blue.400" fontWeight="700">{stats.volunteers}</StatNumber>
           </Stat>
-          <Stat bg="white" p={{ base: 3, md: 4 }} borderRadius="lg" boxShadow="sm">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }}>Funding</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="purple.600">AED {Math.round(stats.funding / 1000)}K</StatNumber>
+          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
+            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Funding</StatLabel>
+            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="purple.400" fontWeight="700">AED {Math.round(stats.funding / 1000)}K</StatNumber>
           </Stat>
         </SimpleGrid>
 
         {/* Map Section */}
-        <Card>
+        <Card bg="neutral.800" border="1px solid" borderColor="neutral.700" borderRadius="12px">
           <CardBody p={0} position="relative">
             {/* Map header with fullscreen button */}
-            <HStack justify="space-between" p={{ base: 2, md: 4 }} borderBottom="1px solid" borderColor="gray.200">
-              <HStack spacing={2}>
+            <HStack justify="space-between" p={{ base: 2, md: 4 }} borderBottom="1px solid" borderColor="neutral.700">
+              <HStack spacing={2} color="neutral.200">
                 <FiMapPin />
-                <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Campaign Locations</Text>
-                <Badge colorScheme="brand" variant="subtle" fontSize={{ base: 'xs', md: 'sm' }}>
+                <Text fontWeight="600" fontSize={{ base: 'sm', md: 'md' }}>Campaign Locations</Text>
+                <Badge bg="rgba(47, 212, 99, 0.1)" color="brand.500" border="1px solid" borderColor="brand.500" fontSize={{ base: 'xs', md: 'sm' }}>
                   {campaigns.length} locations
                 </Badge>
                 {isRefreshing && <Spinner size="sm" color="brand.500" ml={2} />}
@@ -333,31 +335,43 @@ const MapPage = () => {
 
         {/* Selected Campaign Details */}
         {selectedCampaign && (
-          <Card>
+          <Card bg="neutral.800" border="1px solid" borderColor="neutral.700" borderRadius="12px">
             <CardBody p={{ base: 3, md: 4 }}>
               <VStack spacing={{ base: 3, md: 4 }} align="stretch">
                 <HStack justify="space-between" flexWrap="wrap" gap={2}>
                   <HStack spacing={{ base: 2, md: 3 }} flex={1}>
-                    <Text fontSize={{ base: 'xl', md: '2xl' }}>{selectedCampaign.image}</Text>
+                    {selectedCampaign.heroImage ? (
+                      <Image
+                        src={selectedCampaign.heroImage}
+                        alt={`${selectedCampaign.title} banner`}
+                        boxSize={{ base: '48px', md: '64px' }}
+                        objectFit="cover"
+                        borderRadius="8px"
+                        border="1px solid"
+                        borderColor="neutral.700"
+                      />
+                    ) : (
+                      <Text fontSize={{ base: 'xl', md: '2xl' }}>{selectedCampaign.image}</Text>
+                    )}
                     <VStack align="start" spacing={1}>
-                      <Heading size={{ base: 'sm', md: 'md' }}>{selectedCampaign.title}</Heading>
-                      <Text color="gray.600" fontSize={{ base: 'xs', md: 'sm' }}>
+                      <Heading size={{ base: 'sm', md: 'md' }} color="neutral.50" fontWeight="700">{selectedCampaign.title}</Heading>
+                      <Text color="neutral.400" fontSize={{ base: 'xs', md: 'sm' }}>
                         {selectedCampaign.location.address}
                       </Text>
                     </VStack>
                   </HStack>
-                  <Badge colorScheme="brand" variant="solid" fontSize={{ base: 'xs', md: 'sm' }}>
+                  <Badge bg="brand.500" color="neutral.900" fontSize={{ base: 'xs', md: 'sm' }} fontWeight="600">
                     {selectedCampaign.difficulty}
                   </Badge>
                 </HStack>
 
-                <Text color="gray.700" fontSize={{ base: 'sm', md: 'md' }}>
+                <Text color="neutral.300" fontSize={{ base: 'sm', md: 'md' }}>
                   {selectedCampaign.description}
                 </Text>
 
                 <SimpleGrid columns={{ base: 1, md: 3 }} spacing={{ base: 2, md: 4 }}>
-                  <HStack spacing={2}>
-                    <FiCalendar />
+                  <HStack spacing={2} color="neutral.300">
+                    <FiCalendar color="var(--chakra-colors-neutral-400)" />
                     <Text fontSize="sm">
                       {new Date(selectedCampaign.date).toLocaleDateString('en-US', {
                         month: 'short',
@@ -367,13 +381,13 @@ const MapPage = () => {
                       })}
                     </Text>
                   </HStack>
-                  <HStack spacing={2}>
-                    <FiUsers />
+                  <HStack spacing={2} color="neutral.300">
+                    <FiUsers color="var(--chakra-colors-neutral-400)" />
                     <Text fontSize="sm">
                       {selectedCampaign.volunteers.length}/{selectedCampaign.volunteerGoal} volunteers
                     </Text>
                   </HStack>
-                  <HStack spacing={2}>
+                  <HStack spacing={2} color="neutral.300">
                     <Text fontSize="sm">
                       💰 AED {selectedCampaign.funding.current.toLocaleString()}/{selectedCampaign.funding.goal.toLocaleString()}
                     </Text>
@@ -381,14 +395,16 @@ const MapPage = () => {
                 </SimpleGrid>
 
                 {!selectedCampaign.joinable && (
-                  <Alert status="info" borderRadius="md" fontSize="sm">
-                    <AlertIcon />
-                    This campaign sits outside your eligible region. You can join campaigns in your country or nearby your current location.
-                    {typeof selectedCampaign.joinCriteria?.distanceKm === 'number' && (
-                      <>
-                        {' '}It is approximately {selectedCampaign.joinCriteria.distanceKm.toFixed(1)} km from you.
-                      </>
-                    )}
+                  <Alert status="info" borderRadius="12px" fontSize="sm" bg="rgba(66, 153, 225, 0.1)" border="1px solid" borderColor="blue.500">
+                    <AlertIcon color="blue.400" />
+                    <Text color="neutral.200">
+                      This campaign sits outside your eligible region. You can join campaigns in your country or nearby your current location.
+                      {typeof selectedCampaign.joinCriteria?.distanceKm === 'number' && (
+                        <>
+                          {' '}It is approximately {selectedCampaign.joinCriteria.distanceKm.toFixed(1)} km from you.
+                        </>
+                      )}
+                    </Text>
                   </Alert>
                 )}
 
@@ -427,20 +443,32 @@ const MapPage = () => {
         )}
 
         {/* Quick Actions */}
-        <Card>
+        <Card bg="neutral.800" border="1px solid" borderColor="neutral.700" borderRadius="12px">
           <CardBody>
             <VStack spacing={4}>
-              <Heading size="md" textAlign="center">
+              <Heading size="md" textAlign="center" color="neutral.50" fontWeight="700">
                 Join the Movement
               </Heading>
-              <Text textAlign="center" color="gray.600">
+              <Text textAlign="center" color="neutral.300">
                 Every cleanup makes a difference. Find a campaign near you and help create a cleaner, greener Dubai.
               </Text>
               <HStack spacing={3} justify="center">
-                <Button colorScheme="brand" leftIcon={<FiMapPin />} onClick={handleFindNearby}>
+                <Button 
+                  bg="brand.500" 
+                  color="neutral.900" 
+                  leftIcon={<FiMapPin />} 
+                  onClick={handleFindNearby}
+                  _hover={{ bg: 'brand.600' }}
+                >
                   Find Nearby
                 </Button>
-                <Button variant="outline" leftIcon={<FiUsers />}>
+                <Button 
+                  variant="outline" 
+                  leftIcon={<FiUsers />}
+                  borderColor="neutral.700"
+                  color="neutral.200"
+                  _hover={{ bg: 'neutral.700', borderColor: 'brand.500', color: 'brand.500' }}
+                >
                   Create Campaign
                 </Button>
               </HStack>

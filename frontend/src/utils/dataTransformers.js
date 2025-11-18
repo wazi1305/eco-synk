@@ -107,12 +107,13 @@ export const reverseGeocode = async (lat, lng) => {
     return 'Unknown location';
   }
 
-  const cacheKey = `${latNum.toFixed(5)},${lngNum.toFixed(5)}`;
+  const languageKey = 'en';
+  const cacheKey = `${latNum.toFixed(5)},${lngNum.toFixed(5)}|${languageKey}`;
   if (reverseGeocodeCache.has(cacheKey)) {
     return reverseGeocodeCache.get(cacheKey);
   }
 
-  const fallbackLabel = `${latNum.toFixed(4)}, ${lngNum.toFixed(4)}`;
+  const fallbackLabel = 'Unknown location';
 
   try {
     const params = new URLSearchParams({
@@ -123,6 +124,7 @@ export const reverseGeocode = async (lat, lng) => {
     const response = await fetch(`${API_BASE_URL}/geocode/reverse?${params.toString()}`, {
       headers: {
         Accept: 'application/json',
+        'Accept-Language': languageKey,
       },
     });
 
@@ -139,7 +141,7 @@ export const reverseGeocode = async (lat, lng) => {
     return label;
   } catch (error) {
     console.warn('reverseGeocode error', error);
-    reverseGeocodeCache.set(cacheKey, fallbackLabel);
+    reverseGeocodeCache.delete(cacheKey);
     return fallbackLabel;
   }
 };
@@ -218,24 +220,14 @@ export const normalizeLocation = (locationPayload) => {
   if (directAddress && typeof directAddress === 'string') {
     structuredAddress = directAddress;
   } else if (directAddress && typeof directAddress === 'object') {
-    const addressParts = Object.values(directAddress)
-      .filter(Boolean)
-      .map((part) => String(part).trim());
-    if (addressParts.length) {
-      structuredAddress = addressParts.slice(0, 6).join(', ');
-    }
+    structuredAddress = buildAddressLabel(directAddress, contextName || label, null);
   }
 
   if (!structuredAddress && contextAddress) {
     if (typeof contextAddress === 'string') {
       structuredAddress = contextAddress;
     } else if (typeof contextAddress === 'object') {
-      const addressParts = Object.values(contextAddress)
-        .filter(Boolean)
-        .map((part) => String(part).trim());
-      if (addressParts.length) {
-        structuredAddress = addressParts.slice(0, 6).join(', ');
-      }
+      structuredAddress = buildAddressLabel(contextAddress, contextName || label, null);
     }
   }
 
@@ -260,10 +252,12 @@ export const normalizeLocation = (locationPayload) => {
         : null;
 
   const fallback =
+    structuredAddress ||
     label ||
-    (parsedLat !== null && parsedLng !== null
-      ? `Lat ${parsedLat.toFixed(3)}, Lon ${parsedLng.toFixed(3)}`
-      : 'Unknown location');
+    contextName ||
+    locationPayload.display_name ||
+    (contextAddress?.country ? contextAddress.country : null) ||
+    'Unknown location';
 
   return {
     lat: parsedLat,
@@ -312,6 +306,8 @@ export const transformQdrantCampaign = async (payload, options = {}) => {
   }
 
   let location = normalizeLocation(payload.location);
+  const banner = payload.banner || payload.media?.banner || null;
+  const heroImage = banner?.data_url || banner?.image_url || null;
   
   // If no address but has coordinates, try reverse geocoding
   if (location.lat && location.lng && (!payload.location?.address && !payload.location?.label)) {
@@ -347,6 +343,8 @@ export const transformQdrantCampaign = async (payload, options = {}) => {
     location,
     priority,
     image: deriveCampaignImage(priority, payload.hotspot?.materials),
+    heroImage,
+    banner,
     date: startDate,
     organizer,
     funding: {

@@ -47,8 +47,16 @@ const CampaignDetail = ({ campaign, onClose }) => {
           </div>
 
           {/* Campaign Header */}
-          <div className="bg-gradient-to-br from-green-100 to-emerald-100 h-40 flex items-center justify-center">
-            <div className="text-8xl">{campaign.image}</div>
+          <div className="bg-gradient-to-br from-green-100 to-emerald-100 h-40 flex items-center justify-center overflow-hidden">
+            {campaign.heroImage ? (
+              <img
+                src={campaign.heroImage}
+                alt={`${campaign.title} banner`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-8xl">{campaign.image}</div>
+            )}
           </div>
 
           {/* Campaign Info */}
