@@ -1,0 +1,38 @@
+services:
+  - type: web
+    name: ecosynk-backend
+    env: python
+    region: frankfurt
+    plan: free
+    branch: develop
+    buildCommand: pip install -r requirements.txt && python download_model.py
+    startCommand: cd ai-services && uvicorn api_server:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: QDRANT_API_KEY
+        sync: false
+      - key: QDRANT_URL
+        sync: false
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: false
+      - key: LOG_LEVEL
+        value: INFO
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: HF_HOME
+        value: /opt/render/project/src/.cache
+    healthCheckPath: /health
+
+  - type: static
+    name: ecosynk-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: ecosynk-backend
+          property: host
