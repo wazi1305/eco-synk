@@ -27,8 +27,10 @@ import MapView from './map/MapView';
 
 import campaignService from '../services/campaignService';
 import { normalizeCampaignList } from '../utils/campaignFormatter';
+import { useAuth } from '../contexts/AuthContext';
 
 const MapPage = () => {
+  const { user } = useAuth();
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -102,6 +104,17 @@ const MapPage = () => {
 
   // Handle campaign join action
   const handleCampaignJoin = (campaign) => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please login or sign up to join campaigns.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+      });
+      return;
+    }
+    
     if (!campaign?.joinable) {
       toast({
         title: 'Join not available',

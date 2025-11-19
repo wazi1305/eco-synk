@@ -30,3 +30,11 @@ class UserUpdateRequest(BaseModel):
     skills: Optional[List[str]] = None
     experience_level: Optional[str] = None
     profile_picture_url: Optional[str] = None
+
+class FollowUserRequest(BaseModel):
+    """Request model for following a user"""
+    followee_name: str = Field(..., min_length=2, max_length=100, description="Name of the user to follow")
+
+class UnfollowUserRequest(BaseModel):
+    """Request model for unfollowing a user"""
+    followee_id: str = Field(..., description="User ID to unfollow")

@@ -30,6 +30,7 @@ import { FiUsers, FiAward, FiCalendar, FiPlus, FiTrendingUp, FiRefreshCw } from 
 import campaignService from '../services/campaignService';
 import volunteerService from '../services/volunteerService';
 import { normalizeCampaignList } from '../utils/campaignFormatter';
+import RecommendedUsers from './RecommendedUsers';
 
 const getSourceColor = (source) => {
   if (source === 'network' || source === 'qdrant') return 'green';
@@ -276,16 +277,16 @@ const CommunityPage = () => {
             </Box>
           )}
           {/* Leaderboard Section */}
-          <Card bg="white" shadow="sm" border="1px solid" borderColor="gray.200">
+          <Card bg="neutral.800" shadow="sm" border="1px solid" borderColor="neutral.700">
             <CardHeader pb={3}>
               <HStack justify="space-between" align="center">
                 <HStack spacing={3}>
                   <Box
-                    bg="yellow.100"
+                    bg="rgba(251, 191, 36, 0.1)"
                     p={2}
                     borderRadius="lg"
                   >
-                    <Icon as={FiAward} boxSize={5} color="yellow.600" />
+                    <Icon as={FiAward} boxSize={5} color="yellow.400" />
                   </Box>
                   <VStack align="start" spacing={0}>
                     <Heading size="md" color="gray.900">Community Leaderboard</Heading>
@@ -367,13 +368,16 @@ const CommunityPage = () => {
             </CardBody>
           </Card>
 
+          {/* Recommended Users Section */}
+          <RecommendedUsers limit={5} />
+
           {/* Active Cleanups Section */}
-          <Card bg="white" shadow="sm" border="1px solid" borderColor="gray.200">
+          <Card bg="neutral.800" shadow="sm" border="1px solid" borderColor="neutral.700">
             <CardHeader pb={3}>
               <HStack justify="space-between" align="center">
                 <HStack spacing={3}>
                   <Box
-                    bg="green.100"
+                    bg="rgba(47, 212, 99, 0.1)"
                     p={2}
                     borderRadius="lg"
                   >
@@ -465,10 +469,10 @@ const CommunityPage = () => {
           </Card>
 
           {/* Quick Actions */}
-          <Card bg="white" shadow="sm" border="1px solid" borderColor="gray.200">
+          <Card bg="neutral.800" shadow="sm" border="1px solid" borderColor="neutral.700">
             <CardBody>
               <VStack spacing={4}>
-                <Heading size="md" color="gray.900" w="full">Community Actions</Heading>
+                <Heading size="md" color="neutral.50" w="full">Community Actions</Heading>
                 <Grid templateColumns="repeat(2, 1fr)" gap={3} w="full">
                   <Button colorScheme="blue" size="sm" height="auto" py={3}>
                     <VStack spacing={1}>

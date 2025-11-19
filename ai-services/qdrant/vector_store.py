@@ -103,35 +103,11 @@ class EcoSynkVectorStore:
                 else:
                     print(f"   ⚠️  Could not create trash report geo-index: {e}")
             
-            # Volunteer Profiles Collection
-            if settings.volunteer_profiles_collection in existing_names:
-                if recreate:
-                    print(f"🗑️  Deleting existing collection: {settings.volunteer_profiles_collection}")
-                    self.client.delete_collection(settings.volunteer_profiles_collection)
-                else:
-                    print(f"✓ Collection already exists: {settings.volunteer_profiles_collection}")
-            
-            if recreate or settings.volunteer_profiles_collection not in existing_names:
-                print(f"📦 Creating collection: {settings.volunteer_profiles_collection}")
-                self.client.create_collection(
-                    collection_name=settings.volunteer_profiles_collection,
-                    vectors_config=VectorParams(
-                        size=settings.embedding_dimension,
-                        distance=Distance.COSINE
-                    )
-                )
-                print(f"✅ Created: {settings.volunteer_profiles_collection}")
-                
-                # Configure location field as geo-point for geographic filtering
-                try:
-                    self.client.create_payload_index(
-                        collection_name=settings.volunteer_profiles_collection,
-                        field_name="location",
-                        field_schema=PayloadSchemaType.GEO
-                    )
-                    print(f"   ✓ Configured geo-point index for location field")
-                except Exception as e:
-                    print(f"   ⚠️  Could not create geo-index: {e}")
+            # Users Collection (handled by UserService)
+            if "users" in existing_names:
+                print(f"✓ Collection already exists: users")
+            else:
+                print(f"📦 Users collection will be created by UserService")
             
             # Campaigns Collection
             if "campaigns" in existing_names:

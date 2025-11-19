@@ -1139,12 +1139,12 @@ async def get_esg_impact():
         )
         
         # Get all volunteers
-        all_volunteers = vector_store.client.scroll(
+        all_volunteers = user_service.client.scroll(
             collection_name=settings.volunteer_profiles_collection,
             limit=1000,
             with_payload=True,
             with_vectors=False
-        )
+        ) if user_service else ([], None)
         
         # Calculate metrics
         total_cleanups = len(all_reports[0])
@@ -1247,12 +1247,12 @@ async def get_stats():
             with_vectors=False
         )
         
-        volunteers = vector_store.client.scroll(
+        volunteers = user_service.client.scroll(
             collection_name=settings.volunteer_profiles_collection,
             limit=1,
             with_payload=False,
             with_vectors=False
-        )
+        ) if user_service else ([], None)
         
         # Count by getting offset
         trash_count = len(trash_reports[0]) if trash_reports[0] else 0
@@ -1263,9 +1263,9 @@ async def get_stats():
             trash_count = vector_store.client.count(
                 collection_name=settings.trash_reports_collection
             ).count
-            volunteer_count = vector_store.client.count(
+            volunteer_count = user_service.client.count(
                 collection_name=settings.volunteer_profiles_collection
-            ).count
+            ).count if user_service else 0
         except:
             # Fallback to scroll if count fails
             pass
@@ -1587,8 +1587,11 @@ async def update_volunteer_availability(user_id: str, available: bool):
     Toggle whether a volunteer is currently available for cleanups.
     """
     try:
+        if user_service is None:
+            raise HTTPException(status_code=503, detail="User service not initialized")
+            
         # Fetch volunteer profile
-        results = vector_store.client.scroll(
+        results = user_service.client.scroll(
             collection_name=settings.volunteer_profiles_collection,
             limit=100,
             with_payload=True,
@@ -1612,7 +1615,7 @@ async def update_volunteer_availability(user_id: str, available: bool):
         volunteer_found['last_updated'] = datetime.utcnow().isoformat()
         
         # Update in Qdrant
-        vector_store.client.set_payload(
+        user_service.client.set_payload(
             collection_name=settings.volunteer_profiles_collection,
             payload=volunteer_found,
             points=[point_id]
@@ -1642,15 +1645,15 @@ async def list_volunteers(
 ):
     """Return volunteer profiles with optional geo filtering."""
     try:
-        if vector_store is None:
-            raise HTTPException(status_code=503, detail="Vector store not initialized")
+        if user_service is None:
+            raise HTTPException(status_code=503, detail="User service not initialized")
 
         reference_location = None
         if lat is not None and lon is not None:
             reference_location = {"lat": lat, "lon": lon}
 
         fetch_limit = min(max(limit * 2, 100), 512)
-        results = vector_store.client.scroll(
+        results = user_service.client.scroll(
             collection_name=settings.volunteer_profiles_collection,
             limit=fetch_limit,
             with_payload=True,
@@ -1789,8 +1792,11 @@ async def get_leaderboard(limit: int = 10):
     Shows top volunteers by number of cleanups completed.
     """
     try:
+        if user_service is None:
+            raise HTTPException(status_code=503, detail="User service not initialized")
+            
         # Fetch all volunteers
-        results = vector_store.client.scroll(
+        results = user_service.client.scroll(
             collection_name=settings.volunteer_profiles_collection,
             limit=100,
             with_payload=True,
@@ -1915,7 +1921,7 @@ async def get_campaign(campaign_id: str):
 # User Authentication Endpoints
 # ============================================================================
 
-from auth_models import UserRegisterRequest, UserLoginRequest, UserUpdateRequest
+from auth_models import UserRegisterRequest, UserLoginRequest, UserUpdateRequest, FollowUserRequest, UnfollowUserRequest
 
 def get_current_user(authorization: Optional[str] = Header(None)):
     """Extract user from JWT token"""
@@ -1994,6 +2000,134 @@ async def get_current_user_profile(current_user = Depends(get_current_user)):
         "status": "success",
         "user": current_user
     }
+
+@app.post("/users/follow")
+async def follow_user(request: FollowUserRequest, current_user = Depends(get_current_user)):
+    """Follow another user by their name"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if user_service is None:
+        raise HTTPException(status_code=503, detail="User service not available")
+    
+    try:
+        result = user_service.follow_user(
+            follower_id=current_user["user_id"],
+            followee_name=request.followee_name
+        )
+        
+        if result["success"]:
+            return {
+                "status": "success",
+                "message": result["message"],
+                "followee": result.get("followee")
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Follow failed: {str(e)}")
+
+@app.post("/users/unfollow")
+async def unfollow_user(request: UnfollowUserRequest, current_user = Depends(get_current_user)):
+    """Unfollow a user"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if user_service is None:
+        raise HTTPException(status_code=503, detail="User service not available")
+    
+    try:
+        result = user_service.unfollow_user(
+            follower_id=current_user["user_id"],
+            followee_id=request.followee_id
+        )
+        
+        if result["success"]:
+            return {
+                "status": "success",
+                "message": result["message"]
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unfollow failed: {str(e)}")
+
+@app.get("/users/recommended")
+async def get_recommended_users(current_user = Depends(get_current_user), limit: int = Query(10, ge=1, le=50)):
+    """Get personalized user recommendations using vector similarity"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    if user_service is None:
+        raise HTTPException(status_code=503, detail="User service not available")
+    
+    try:
+        print(f"Getting recommendations for user: {current_user.get('user_id')}")
+        result = user_service.get_recommended_users(
+            user_id=current_user["user_id"],
+            limit=limit
+        )
+        
+        print(f"Recommendation result: success={result.get('success')}, error={result.get('error')}")
+        
+        if result["success"]:
+            return {
+                "status": "success",
+                "recommendations": result["recommendations"],
+                "total_candidates": result["total_candidates"]
+            }
+        else:
+            print(f"Recommendation error: {result['error']}")
+            raise HTTPException(status_code=500, detail=result["error"])
+            
+    except Exception as e:
+        print(f"Exception in get_recommended_users: {type(e).__name__}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Recommendations failed: {str(e)}")
+
+@app.get("/users/search")
+async def search_users(query: str = Query(..., min_length=2), limit: int = Query(20, ge=1, le=50)):
+    """Search users by name or email"""
+    if user_service is None:
+        raise HTTPException(status_code=503, detail="User service not available")
+    
+    try:
+        result = user_service.search_users(query=query, limit=limit)
+        
+        if result["success"]:
+            return {
+                "status": "success",
+                "users": result["users"]
+            }
+        else:
+            raise HTTPException(status_code=500, detail=result["error"])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
+
+@app.get("/users/{user_id}/profile")
+async def get_user_profile(user_id: str):
+    """Get public user profile"""
+    if user_service is None:
+        raise HTTPException(status_code=503, detail="User service not available")
+    
+    try:
+        user = user_service.get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "status": "success",
+            "user": user
+        }
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get profile: {str(e)}")
 
 @app.get("/users/{user_id}/stats")
 async def get_user_stats(user_id: str):

@@ -32,6 +32,7 @@ import {
   Tab,
   TabPanel,
   SimpleGrid,
+  useToast,
 } from '@chakra-ui/react';
 import {
   FiMapPin,
@@ -44,12 +45,88 @@ import {
   FiStar,
   FiClock,
   FiCamera,
+  FiUserCheck,
+  FiUserPlus,
 } from 'react-icons/fi';
+import { useAuth } from '../contexts/AuthContext';
+import userService from '../services/userService';
 
 const UserProfileModal = ({ isOpen, onClose, userData }) => {
   const [activeTab, setActiveTab] = useState(0);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const { user, token } = useAuth();
+  const toast = useToast();
 
   if (!userData) return null;
+
+  // Check if already following
+  React.useEffect(() => {
+    if (user && userData.user_id) {
+      setIsFollowing(userService.isFollowing(user, userData.user_id));
+    }
+  }, [user, userData.user_id]);
+
+  const handleFollowToggle = async () => {
+    if (!token) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to follow users',
+        status: 'warning',
+        duration: 3000,
+        isClosable: true
+      });
+      return;
+    }
+
+    setIsFollowLoading(true);
+
+    if (isFollowing) {
+      // Unfollow
+      const result = await userService.unfollowUser(userData.user_id, token);
+      if (result.success) {
+        setIsFollowing(false);
+        toast({
+          title: 'Unfollowed',
+          description: `You unfollowed ${userData.name}`,
+          status: 'info',
+          duration: 2000,
+          isClosable: true
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error,
+          status: 'error',
+          duration: 3000,
+          isClosable: true
+        });
+      }
+    } else {
+      // Follow
+      const result = await userService.followUser(userData.name, token);
+      if (result.success) {
+        setIsFollowing(true);
+        toast({
+          title: 'Success',
+          description: result.message,
+          status: 'success',
+          duration: 2000,
+          isClosable: true
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error,
+          status: 'error',
+          duration: 3000,
+          isClosable: true
+        });
+      }
+    }
+
+    setIsFollowLoading(false);
+  };
 
   const achievements = [
     { id: 1, title: 'Beach Guardian', icon: '🏖️', description: 'Completed 10 beach cleanups', date: '2024-11-15' },
@@ -148,13 +225,15 @@ const UserProfileModal = ({ isOpen, onClose, userData }) => {
             {/* Action Buttons */}
             <HStack spacing={3}>
               <Button 
-                bg="brand.500" 
-                color="neutral.900" 
+                bg={isFollowing ? "neutral.600" : "brand.500"}
+                color={isFollowing ? "neutral.300" : "neutral.900"}
                 size="sm"
-                _hover={{ bg: 'brand.600' }}
+                _hover={{ bg: isFollowing ? 'neutral.500' : 'brand.600' }}
+                onClick={handleFollowToggle}
+                isLoading={isFollowLoading}
+                leftIcon={<Icon as={isFollowing ? FiUserCheck : FiUserPlus} />}
               >
-                <Icon as={FiUsers} mr={2} />
-                Follow
+                {isFollowing ? 'Following' : 'Follow'}
               </Button>
               <Button 
                 variant="outline" 

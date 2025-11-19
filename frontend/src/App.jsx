@@ -107,7 +107,7 @@ function App() {
     <AuthProvider>
       <Flex
         direction="column"
-        bg="gray.50"
+        bg="neutral.900"
         height={windowHeight}
         className="app-container safe-area-inset"
       >

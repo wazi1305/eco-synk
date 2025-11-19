@@ -60,6 +60,7 @@ import volunteerService from '../services/volunteerService';
 import trashReportService from '../services/trashReportService';
 import { normalizeCampaignList } from '../utils/campaignFormatter';
 import UserProfileModal from './UserProfileModal';
+import RecommendedUsers from './RecommendedUsers';
 
 const DEFAULT_IMPACT_STATS = {
   activities: 0,
@@ -757,9 +758,6 @@ const FeedPage = () => {
                 color="brand.500"
                 _hover={{ bg: 'rgba(47, 212, 99, 0.1)' }}
               />
-              <IconButton icon={<FiSearch />} variant="ghost" size="sm" />
-              <IconButton icon={<FiFilter />} variant="ghost" size="sm" />
-
               <IconButton
                 icon={<FiRefreshCw />}
                 variant="ghost"
@@ -907,69 +905,18 @@ const FeedPage = () => {
             borderRadius="12px"
           >
             <CardBody>
-
-              <HStack spacing={3} mb={3}>
-                <Avatar 
-                  size="sm" 
-                  name="Current User" 
-                  bg="rgba(47, 212, 99, 0.1)"
-                  border="2px solid"
-                  borderColor="brand.500"
-                  color="brand.500"
-                />
-                <Textarea
-                  placeholder="Share your eco-impact..."
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  resize="none"
-                  minH="unset"
-                  rows={2}
-                  bg="neutral.700"
-                  border="1px solid"
-                  borderColor="neutral.600"
-                  color="neutral.50"
-                  _placeholder={{ color: 'neutral.400' }}
-                  _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
-                />
-              </HStack>
-              <HStack justify="space-between">
-                <HStack spacing={2}>
-                  <IconButton 
-                    icon={<FiCamera />} 
-                    variant="ghost" 
-                    size="sm" 
-                    color="neutral.400"
-                    _hover={{ bg: 'neutral.700', color: 'brand.500' }}
-                  />
-                  <IconButton 
-                    icon={<FiMapPin />} 
-                    variant="ghost" 
-                    size="sm"
-                    color="neutral.400"
-                    _hover={{ bg: 'neutral.700', color: 'brand.500' }}
-                  />
-                  <IconButton 
-                    icon={<FiUsers />} 
-                    variant="ghost" 
-                    size="sm"
-                    color="neutral.400"
-                    _hover={{ bg: 'neutral.700', color: 'brand.500' }}
-                  />
-                </HStack>
-                <Button 
-                  size="sm" 
-                  bg="brand.500"
-                  color="neutral.900"
-                  _hover={{ bg: 'brand.600' }}
-                  isDisabled={!newPost.trim()}
-                >
-                  Post
-                </Button>
-              </HStack>
               {isAuthenticated ? (
                 <>
                   <HStack spacing={3} mb={3}>
-                    <Avatar size="sm" name={user?.name} src={user?.avatar} />
+                    <Avatar 
+                      size="sm" 
+                      name={user?.name} 
+                      src={user?.avatar}
+                      bg="rgba(47, 212, 99, 0.1)"
+                      border="2px solid"
+                      borderColor="brand.500"
+                      color="brand.500"
+                    />
                     <Textarea
                       placeholder="Share your eco-impact..."
                       value={newPost}
@@ -977,31 +924,69 @@ const FeedPage = () => {
                       resize="none"
                       minH="unset"
                       rows={2}
+                      bg="neutral.700"
+                      border="1px solid"
+                      borderColor="neutral.600"
+                      color="neutral.50"
+                      _placeholder={{ color: 'neutral.400' }}
+                      _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
                     />
                   </HStack>
                   <HStack justify="space-between">
                     <HStack spacing={2}>
-                      <IconButton icon={<FiCamera />} variant="ghost" size="sm" />
-                      <IconButton icon={<FiMapPin />} variant="ghost" size="sm" />
-                      <IconButton icon={<FiUsers />} variant="ghost" size="sm" />
+                      <IconButton 
+                        icon={<FiCamera />} 
+                        variant="ghost" 
+                        size="sm"
+                        color="neutral.400"
+                        _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+                      />
+                      <IconButton 
+                        icon={<FiMapPin />} 
+                        variant="ghost" 
+                        size="sm"
+                        color="neutral.400"
+                        _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+                      />
+                      <IconButton 
+                        icon={<FiUsers />} 
+                        variant="ghost" 
+                        size="sm"
+                        color="neutral.400"
+                        _hover={{ bg: 'neutral.700', color: 'brand.500' }}
+                      />
                     </HStack>
-                    <Button size="sm" colorScheme="brand" isDisabled={!newPost.trim()}>
+                    <Button 
+                      size="sm" 
+                      bg="brand.500"
+                      color="neutral.900"
+                      _hover={{ bg: 'brand.600' }}
+                      isDisabled={!newPost.trim()}
+                    >
                       Post
                     </Button>
                   </HStack>
                 </>
               ) : (
                 <VStack spacing={3} py={4}>
-                  <Text color="gray.600" textAlign="center">
+                  <Text color="neutral.400" textAlign="center">
                     Sign in to share your eco-impact and connect with the community
                   </Text>
-                  <Button colorScheme="brand" onClick={() => setShowAuthModal(true)}>
+                  <Button 
+                    bg="brand.500"
+                    color="neutral.900"
+                    _hover={{ bg: 'brand.600' }}
+                    onClick={() => setShowAuthModal(true)}
+                  >
                     Sign In to Post
                   </Button>
                 </VStack>
               )}
             </CardBody>
           </Card>
+
+          {/* Recommended Users Section */}
+          {isAuthenticated && <RecommendedUsers limit={3} />}
 
           {/* Activities Feed */}
           {isLoading ? (

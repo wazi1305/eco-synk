@@ -42,7 +42,8 @@ class Settings(BaseSettings):
     
     # Qdrant Configuration
     trash_reports_collection: str = "trash_reports"
-    volunteer_profiles_collection: str = "volunteer_profiles"
+    volunteer_profiles_collection: str = "users"  # Now using unified users collection
+    campaigns_collection: str = "campaigns"
     
     # Search Parameters
     default_search_limit: int = 10

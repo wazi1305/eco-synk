@@ -247,8 +247,12 @@ const CampaignsPage = () => {
       setShowAuthModal(true);
       return;
     }
+    // Donation modal disabled
+    console.log('Donate button clicked for:', campaign.title);
+
     setSelectedCampaign(campaign);
     setShowDonationModal(true);
+
 
   };
 
@@ -285,6 +289,8 @@ const CampaignsPage = () => {
   //   setShowDonationModal(false);
   // };
 
+
+
   const handleCreateCampaign = () => {
     if (!user) {
       setShowAuthModal(true);
@@ -310,6 +316,7 @@ const CampaignsPage = () => {
     }
     setShowDonationModal(false);
   };
+
 
 
   const handleCampaignCreated = (newCampaign) => {
@@ -445,9 +452,13 @@ const CampaignsPage = () => {
                 size="sm"
                 bg="brand.500"
                 color="neutral.900"
-                onClick={() => setShowCreateForm(true)}
-                colorScheme="whiteAlpha"
-                onClick={handleCreateCampaign}
+                onClick={() => {
+                  if (!user) {
+                    setShowAuthModal(true);
+                    return;
+                  }
+                  setShowCreateForm(true);
+                }}
                 borderRadius="full"
                 _hover={{ bg: 'brand.600' }}
               >

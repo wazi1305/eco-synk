@@ -59,6 +59,26 @@ const computeDaysRemaining = (endDate) => {
 
 const reverseGeocodeCache = new Map();
 
+// Request queue to prevent network congestion
+const geocodeQueue = [];
+let activeRequests = 0;
+const MAX_CONCURRENT_REQUESTS = 5;
+
+const processGeocodeQueue = () => {
+  while (activeRequests < MAX_CONCURRENT_REQUESTS && geocodeQueue.length > 0) {
+    const { lat, lng, resolve, reject } = geocodeQueue.shift();
+    activeRequests++;
+    
+    performReverseGeocode(lat, lng)
+      .then(resolve)
+      .catch(reject)
+      .finally(() => {
+        activeRequests--;
+        processGeocodeQueue();
+      });
+  }
+};
+
 const buildAddressLabel = (address, displayName, fallback) => {
   if (!address || typeof address !== 'object') {
     return displayName || fallback;
@@ -99,21 +119,12 @@ const buildAddressLabel = (address, displayName, fallback) => {
   return parts.join(', ');
 };
 
-export const reverseGeocode = async (lat, lng) => {
+// Core geocoding function (internal use only)
+const performReverseGeocode = async (lat, lng) => {
   const latNum = Number(lat);
   const lngNum = Number(lng);
-
-  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
-    return 'Unknown location';
-  }
-
-  const languageKey = 'en';
-  const cacheKey = `${latNum.toFixed(5)},${lngNum.toFixed(5)}|${languageKey}`;
-  if (reverseGeocodeCache.has(cacheKey)) {
-    return reverseGeocodeCache.get(cacheKey);
-  }
-
   const fallbackLabel = 'Unknown location';
+  const languageKey = 'en';
 
   try {
     const params = new URLSearchParams({
@@ -137,13 +148,38 @@ export const reverseGeocode = async (lat, lng) => {
     const displayName = payload?.label || payload?.display_name || payload?.context?.display_name;
     const label = buildAddressLabel(address, displayName, fallbackLabel);
 
-    reverseGeocodeCache.set(cacheKey, label);
     return label;
   } catch (error) {
     console.warn('reverseGeocode error', error);
-    reverseGeocodeCache.delete(cacheKey);
     return fallbackLabel;
   }
+};
+
+// Public API with queue throttling
+export const reverseGeocode = async (lat, lng) => {
+  const latNum = Number(lat);
+  const lngNum = Number(lng);
+
+  if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+    return 'Unknown location';
+  }
+
+  const languageKey = 'en';
+  const cacheKey = `${latNum.toFixed(5)},${lngNum.toFixed(5)}|${languageKey}`;
+  
+  // Return cached result immediately
+  if (reverseGeocodeCache.has(cacheKey)) {
+    return reverseGeocodeCache.get(cacheKey);
+  }
+
+  // Queue the request to avoid network congestion
+  return new Promise((resolve, reject) => {
+    geocodeQueue.push({ lat: latNum, lng: lngNum, resolve: (result) => {
+      reverseGeocodeCache.set(cacheKey, result);
+      resolve(result);
+    }, reject });
+    processGeocodeQueue();
+  });
 };
 
 const toCoordinate = (value) => {

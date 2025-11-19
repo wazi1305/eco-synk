@@ -43,9 +43,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const isAuthenticated = !!user;
+  const token = localStorage.getItem('ecosynk_token');
 
   const value = {
     user,
+    token,
     isAuthenticated,
     isLoading,
     login,

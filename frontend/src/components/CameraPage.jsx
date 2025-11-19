@@ -24,6 +24,8 @@ import {
 } from '@chakra-ui/react';
 import { FiCamera, FiImage, FiStar, FiMapPin, FiUsers, FiAlertCircle } from 'react-icons/fi';
 import aiAnalysisService from '../services/aiAnalysis';
+import { useAuth } from '../contexts/AuthContext';
+import { Navigate } from 'react-router-dom';
 
 const formatCoordinatePair = (lat, lon) => {
   const latNum = typeof lat === 'number' ? lat : Number(lat);
@@ -47,6 +49,7 @@ const USER_STATS = {
 };
 
 const CameraPage = () => {
+  const { user } = useAuth();
   const webcamRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -509,6 +512,18 @@ const CameraPage = () => {
   };
 
   const submitReport = async () => {
+    if (!user) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please login or sign up to submit trash reports.',
+        status: 'warning',
+        duration: 5000,
+        isClosable: true,
+        position: 'top',
+      });
+      return;
+    }
+    
     if (!capturedImage) return;
 
     setIsAnalyzing(true);
