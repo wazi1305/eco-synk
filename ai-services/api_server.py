@@ -2089,7 +2089,7 @@ async def get_recommended_users(current_user = Depends(get_current_user), limit:
         raise HTTPException(status_code=500, detail=f"Recommendations failed: {str(e)}")
 
 @app.get("/users/search")
-async def search_users(query: str = Query(..., min_length=2), limit: int = Query(20, ge=1, le=50)):
+async def search_users(query: str = Query(..., min_length=1), limit: int = Query(20, ge=1, le=50)):
     """Search users by name or email"""
     if user_service is None:
         raise HTTPException(status_code=503, detail="User service not available")

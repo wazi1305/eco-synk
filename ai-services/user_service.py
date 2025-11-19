@@ -658,26 +658,61 @@ class UserService:
     def search_users(self, query: str, limit: int = 20) -> Dict[str, Any]:
         """Search users by name or email"""
         try:
-            # Search by name
-            search_result = self.client.scroll(
-                collection_name=self.collection_name,
-                limit=limit
-            )
-            
-            # Filter results by query (case-insensitive)
-            query_lower = query.lower()
+            normalized_query = (query or "").strip()
+            if not normalized_query:
+                return {"success": True, "users": []}
+
+            query_lower = normalized_query.lower()
             matching_users = []
-            
-            for user in search_result[0]:
+            seen_ids = set()
+
+            # Exact-ish matches via scroll (name/email contains query)
+            scroll_result = self.client.scroll(
+                collection_name=self.collection_name,
+                limit=limit * 2
+            )
+
+            for user in scroll_result[0]:
                 user_data = user.payload
                 name = user_data.get("name", "").lower()
                 email = user_data.get("email", "").lower()
-                
+
                 if query_lower in name or query_lower in email:
                     user_clean = {k: v for k, v in user_data.items() if k != "password_hash"}
                     user_clean["user_id"] = user.id
+                    user_clean["match_type"] = "keyword"
+                    user_clean["match_score"] = 100.0
                     matching_users.append(user_clean)
-            
+                    seen_ids.add(user.id)
+
+            # Semantic match using embeddings to surface similar expertise/interests
+            try:
+                query_vector = self.model.encode(normalized_query).tolist()
+                vector_threshold = 0.2 if len(normalized_query) >= 3 else 0.1
+                vector_results = self.client.query_points(
+                    collection_name=self.collection_name,
+                    query=query_vector,
+                    limit=limit * 2,
+                    score_threshold=vector_threshold
+                ).points
+
+                for result in vector_results:
+                    if result.id in seen_ids:
+                        continue
+
+                    payload = result.payload or {}
+                    user_clean = {k: v for k, v in payload.items() if k != "password_hash"}
+                    user_clean["user_id"] = result.id
+                    user_clean["match_type"] = "semantic"
+                    user_clean["match_score"] = round((result.score or 0) * 100, 2)
+                    matching_users.append(user_clean)
+                    seen_ids.add(result.id)
+            except Exception as semantic_error:
+                print(f"Semantic search fallback due to error: {semantic_error}")
+
+            # Order by match score descending and trim to limit
+            matching_users.sort(key=lambda item: item.get("match_score", 0), reverse=True)
+
             return {
                 "success": True,
                 "users": matching_users[:limit]

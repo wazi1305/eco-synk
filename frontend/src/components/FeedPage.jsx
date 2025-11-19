@@ -32,6 +32,7 @@ import {
   Tab,
   TabPanel,
   Spinner,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './auth/AuthModal';
@@ -61,6 +62,7 @@ import trashReportService from '../services/trashReportService';
 import { normalizeCampaignList } from '../utils/campaignFormatter';
 import UserProfileModal from './UserProfileModal';
 import RecommendedUsers from './RecommendedUsers';
+import UserSearchDrawer from './UserSearchDrawer';
 
 const DEFAULT_IMPACT_STATS = {
   activities: 0,
@@ -351,6 +353,7 @@ const FeedPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   
   const { user, isAuthenticated, logout } = useAuth();
+  const searchDisclosure = useDisclosure();
 
   const handleScroll = useCallback(() => {
     const currentScrollY = scrollRef.current?.scrollTop || 0;
@@ -742,6 +745,8 @@ const FeedPage = () => {
                 variant="ghost" 
                 size="sm" 
                 color="neutral.400"
+                aria-label="Search people"
+                onClick={searchDisclosure.onOpen}
                 _hover={{ bg: 'rgba(47, 212, 99, 0.1)', color: 'brand.500' }}
               />
               <IconButton 
@@ -1043,6 +1048,12 @@ const FeedPage = () => {
       <AuthModal 
         isOpen={showAuthModal} 
         onClose={() => setShowAuthModal(false)} 
+      />
+
+      {/* Global user search */}
+      <UserSearchDrawer
+        isOpen={searchDisclosure.isOpen}
+        onClose={searchDisclosure.onClose}
       />
     </Box>
   );
