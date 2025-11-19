@@ -25,7 +25,7 @@ import {
 } from '@chakra-ui/react';
 import { FiSearch, FiRefreshCw } from 'react-icons/fi';
 import CampaignCard from './CampaignCard';
-import DonationModal from './DonationModal';
+// import DonationModal from './DonationModal';
 import CampaignDetail from './CampaignDetail';
 import JoinCampaignModal from './JoinCampaignModal';
 import CreateCampaignForm from './CreateCampaignForm';
@@ -239,12 +239,17 @@ const CampaignsPage = () => {
   }, [dataSource]);
 
   const handleDonate = (campaign) => {
+
+    // Donation modal disabled
+    console.log('Donate button clicked for:', campaign.title);
+
     if (!user) {
       setShowAuthModal(true);
       return;
     }
     setSelectedCampaign(campaign);
     setShowDonationModal(true);
+
   };
 
   const handleViewCampaign = (campaign) => {
@@ -260,6 +265,25 @@ const CampaignsPage = () => {
     setSelectedCampaign(campaign);
     setShowJoinModal(true);
   };
+
+
+  // const handleDonationSubmit = (amount) => {
+  //   if (selectedCampaign) {
+  //     const updatedCampaigns = campaigns.map(c =>
+  //       c.id === selectedCampaign.id
+  //         ? {
+  //             ...c,
+  //             funding: {
+  //               ...(c.funding || {}),
+  //               current: (c.funding?.current || 0) + amount,
+  //             },
+  //           }
+  //         : c
+  //     );
+  //     setCampaigns(updatedCampaigns);
+  //   }
+  //   setShowDonationModal(false);
+  // };
 
   const handleCreateCampaign = () => {
     if (!user) {
@@ -286,6 +310,7 @@ const CampaignsPage = () => {
     }
     setShowDonationModal(false);
   };
+
 
   const handleCampaignCreated = (newCampaign) => {
     // Add new campaign to the list
@@ -512,14 +537,14 @@ const CampaignsPage = () => {
         />
       )}
 
-      {/* Donation Modal */}
-      {showDonationModal && selectedCampaign && (
+      {/* Donation Modal - Disabled */}
+      {/* {showDonationModal && selectedCampaign && (
         <DonationModal
           campaign={selectedCampaign}
           onClose={() => setShowDonationModal(false)}
           onSubmit={handleDonationSubmit}
         />
-      )}
+      )} */}
 
       {/* Campaign Detail Modal */}
       {showCampaignDetail && selectedCampaign && (

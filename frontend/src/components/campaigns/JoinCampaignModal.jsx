@@ -111,6 +111,7 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
             icon: iconMap[weather.condition] || WiCloudy,
             recommendation: getWeatherRecommendation(weather)
           });
+          setLoadingWeather(false);
         } catch (error) {
           console.error('Error fetching weather:', error);
           setWeatherData({
@@ -723,11 +724,11 @@ const JoinCampaignModal = ({ isOpen, onClose, campaign }) => {
               <TabPanel p={0}>
                 <VStack spacing={6} align="stretch">
                   {/* Emergency Information */}
-                  <Alert status="warning" borderRadius="lg">
-                    <AlertIcon />
+                  <Alert status="warning" borderRadius="lg" bg="rgba(237, 137, 54, 0.1)" border="1px solid" borderColor="orange.500">
+                    <AlertIcon color="orange.400" />
                     <Box>
-                      <AlertTitle fontSize="sm">Emergency Protocols</AlertTitle>
-                      <AlertDescription fontSize="sm">
+                      <AlertTitle fontSize="sm" color="neutral.50" fontWeight="700">Emergency Protocols</AlertTitle>
+                      <AlertDescription fontSize="sm" color="neutral.300">
                         Trained first aid volunteers will be on-site. In case of emergency, locate the nearest volunteer with a red safety vest.
                       </AlertDescription>
                     </Box>

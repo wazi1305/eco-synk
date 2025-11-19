@@ -227,27 +227,20 @@ const MapPage = () => {
       <VStack spacing={{ base: 4, md: 6 }} align="stretch" maxW="container.xl" mx="auto">
         {/* Header */}
         <Box>
-          <HStack justify="space-between" align={{ base: 'flex-start', md: 'center' }} spacing={{ base: 2, md: 4 }} flexWrap="wrap">
-            <Box flex={1}>
-              <Heading size={{ base: 'md', md: 'lg' }} mb={1} color="neutral.50" fontWeight="700">
-                Campaign Map
-              </Heading>
-              <Text color="neutral.400" fontSize={{ base: 'sm', md: 'md' }} display={{ base: 'none', md: 'block' }}>
-                Discover cleanup campaigns in your area and join the environmental movement
-              </Text>
-            </Box>
+          <HStack justify="flex-end" align="center" spacing={{ base: 2, md: 4 }}>
             <Button
               size="sm"
               variant="outline"
               leftIcon={<FiRefreshCw />}
               onClick={handleRefresh}
               isLoading={isRefreshing}
+              borderColor="neutral.600"
+              color="neutral.200"
+              _hover={{ bg: 'neutral.700', borderColor: 'brand.500', color: 'brand.500' }}
             >
               Refresh
             </Button>
           </HStack>
-
-
         </Box>
 
         {(error || warning) && (
@@ -266,26 +259,6 @@ const MapPage = () => {
             )}
           </Box>
         )}
-
-        {/* Stats */}
-        <SimpleGrid columns={{ base: 2, md: 4 }} spacing={{ base: 2, md: 4 }}>
-          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Total Campaigns</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="brand.500" fontWeight="700">{stats.total}</StatNumber>
-          </Stat>
-          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Active</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="green.400" fontWeight="700">{stats.active}</StatNumber>
-          </Stat>
-          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Volunteers</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="blue.400" fontWeight="700">{stats.volunteers}</StatNumber>
-          </Stat>
-          <Stat bg="neutral.800" p={{ base: 3, md: 4 }} borderRadius="12px" border="1px solid" borderColor="neutral.700">
-            <StatLabel fontSize={{ base: 'xs', md: 'sm' }} color="neutral.400" fontWeight="600" letterSpacing="0.05em">Funding</StatLabel>
-            <StatNumber fontSize={{ base: 'lg', md: '2xl' }} color="purple.400" fontWeight="700">AED {Math.round(stats.funding / 1000)}K</StatNumber>
-          </Stat>
-        </SimpleGrid>
 
         {/* Map Section */}
         <Card bg="neutral.800" border="1px solid" borderColor="neutral.700" borderRadius="12px">

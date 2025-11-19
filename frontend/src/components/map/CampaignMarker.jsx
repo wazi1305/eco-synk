@@ -45,9 +45,9 @@ const CampaignMarker = ({
       }}
     >
       <Popup>
-        <Box p={2} minW="200px">
+        <Box p={2} minW="200px" bg="neutral.800" borderRadius="md">
           <VStack align="start" spacing={2}>
-            <Text fontWeight="bold" fontSize="sm">
+            <Text fontWeight="bold" fontSize="sm" color="neutral.50">
               {campaign.campaign_name || campaign.title}
             </Text>
             
@@ -58,22 +58,25 @@ const CampaignMarker = ({
             </HStack>
             
             {campaign.goals && (
-              <VStack align="start" spacing={1} fontSize="xs">
+              <VStack align="start" spacing={1} fontSize="xs" color="neutral.300">
                 <Text>Target: ${campaign.goals.target_funding_usd}</Text>
                 <Text>Volunteers: {campaign.goals.current_volunteers}/{campaign.goals.volunteer_goal}</Text>
               </VStack>
             )}
             
             <HStack spacing={2} pt={2}>
-              <Button size="xs" colorScheme="blue" onClick={() => onView?.()}>
+              <Button size="xs" bg="blue.500" color="white" _hover={{ bg: 'blue.600' }} onClick={() => onView?.()}>
                 View
               </Button>
               <Tooltip label={joinTooltip} placement="top" shouldWrapChildren>
                 <Button
                   size="xs"
-                  colorScheme="green"
+                  bg="brand.500"
+                  color="neutral.900"
+                  _hover={{ bg: 'brand.600' }}
                   onClick={() => onJoin?.()}
                   isDisabled={!canJoin}
+                  _disabled={{ opacity: 0.4, cursor: 'not-allowed' }}
                 >
                   Join
                 </Button>

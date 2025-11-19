@@ -483,13 +483,13 @@ const MapView = forwardRef(({
         <Box
           height="100%"
           overflowY="auto"
-          bg="white"
+          bg="neutral.900"
           px={{ base: 3, md: 6 }}
           py={{ base: 3, md: 6 }}
         >
           {preparedCampaigns.length === 0 ? (
-            <VStack spacing={4} py={10} color="gray.600">
-              <Text fontWeight="semibold">No campaigns match your filters</Text>
+            <VStack spacing={4} py={10} color="neutral.300">
+              <Text fontWeight="semibold" color="neutral.50">No campaigns match your filters</Text>
               <Text fontSize="sm" textAlign="center">
                 Try widening your distance filters or clearing the search terms to see more results.
               </Text>
@@ -510,7 +510,9 @@ const MapView = forwardRef(({
                 return (
                   <Box
                     key={campaignId}
-                    bg="gray.50"
+                    bg="neutral.800"
+                    border="1px solid"
+                    borderColor="neutral.700"
                     borderRadius="lg"
                     boxShadow="sm"
                     p={{ base: 3, md: 4 }}
@@ -518,11 +520,11 @@ const MapView = forwardRef(({
                     <VStack align="stretch" spacing={3}>
                       <HStack justify="space-between" align="start" spacing={4}>
                         <VStack align="start" spacing={1} flex={1}>
-                          <Text fontWeight="semibold" fontSize="md" color="gray.800">
+                          <Text fontWeight="semibold" fontSize="md" color="neutral.50">
                             {campaign.title}
                           </Text>
                           {campaign.location?.address && (
-                            <Text fontSize="sm" color="gray.600">
+                            <Text fontSize="sm" color="neutral.300">
                               {campaign.location.address}
                             </Text>
                           )}
@@ -541,15 +543,21 @@ const MapView = forwardRef(({
                         <Button
                           size="sm"
                           variant="outline"
+                          borderColor="neutral.600"
+                          color="neutral.200"
+                          _hover={{ bg: 'neutral.700', borderColor: 'brand.500' }}
                           onClick={() => handleViewDetails(campaign)}
                         >
                           View details
                         </Button>
                         <Button
                           size="sm"
-                          colorScheme="brand"
+                          bg="brand.500"
+                          color="neutral.900"
+                          _hover={{ bg: 'brand.600' }}
                           onClick={() => handleJoinRequest(campaign)}
                           isDisabled={!campaign.joinable}
+                          _disabled={{ opacity: 0.4, cursor: 'not-allowed' }}
                         >
                           Join campaign
                         </Button>
@@ -602,7 +610,9 @@ const MapView = forwardRef(({
           bottom="20px"
           left="50%"
           transform="translateX(-50%)"
-          bg="white"
+          bg="neutral.800"
+          border="1px solid"
+          borderColor="neutral.700"
           px={4}
           py={2}
           borderRadius="full"
@@ -610,10 +620,10 @@ const MapView = forwardRef(({
           zIndex={1000}
         >
           <HStack spacing={2}>
-            <Badge colorScheme="brand" variant="solid">
+            <Badge bg="brand.500" color="neutral.900" fontSize="sm" fontWeight="700">
               {preparedCampaigns.length}
             </Badge>
-            <Text fontSize="sm" fontWeight="medium">
+            <Text fontSize="sm" fontWeight="600" color="neutral.50">
               {preparedCampaigns.length === 1 ? 'campaign' : 'campaigns'} found
             </Text>
           </HStack>
@@ -627,7 +637,9 @@ const MapView = forwardRef(({
           top="50%"
           left="50%"
           transform="translate(-50%, -50%)"
-          bg="white"
+          bg="neutral.800"
+          border="1px solid"
+          borderColor="neutral.700"
           p={6}
           borderRadius="xl"
           boxShadow="xl"
@@ -637,10 +649,10 @@ const MapView = forwardRef(({
         >
           <VStack spacing={3}>
             <Text fontSize="4xl">🔍</Text>
-            <Text fontWeight="semibold" color="gray.900">
+            <Text fontWeight="700" color="neutral.50">
               No campaigns found
             </Text>
-            <Text fontSize="sm" color="gray.600" textAlign="center">
+            <Text fontSize="sm" color="neutral.300" textAlign="center">
               Try expanding your search radius or clearing filters
             </Text>
           </VStack>
@@ -654,7 +666,9 @@ const MapView = forwardRef(({
           top="50%"
           left="50%"
           transform="translate(-50%, -50%)"
-          bg="white"
+          bg="neutral.800"
+          border="1px solid"
+          borderColor="neutral.700"
           p={6}
           borderRadius="xl"
           boxShadow="xl"
@@ -662,7 +676,7 @@ const MapView = forwardRef(({
         >
           <VStack spacing={3}>
             <Spinner size="lg" color="brand.500" />
-            <Text fontWeight="medium">
+            <Text fontWeight="700" color="neutral.50">
               Finding your location...
             </Text>
           </VStack>

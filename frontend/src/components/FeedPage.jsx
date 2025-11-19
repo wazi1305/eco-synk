@@ -511,8 +511,10 @@ const FeedPage = () => {
       }} 
       transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)" 
       mb={{ base: 3, md: 4 }}
+      display="flex"
+      flexDirection="column"
     >
-      <CardBody p={0}>
+      <CardBody p={0} display="flex" flexDirection="column" flex={1}>
         {/* Activity Header */}
         <HStack spacing={{ base: 2, md: 3 }} p={{ base: 3, md: 4 }} pb={3}>
           <Avatar 
@@ -579,7 +581,7 @@ const FeedPage = () => {
         </HStack>
 
         {/* Activity Content */}
-        <Box px={{ base: 3, md: 4 }} pb={3}>
+        <Box px={{ base: 3, md: 4 }} pb={3} flex={1}>
           <Heading size={{ base: 'sm', md: 'md' }} mb={2} color="neutral.50" fontWeight="700">{activity.title}</Heading>
           <Text fontSize={{ base: 'sm', md: 'md' }} color="neutral.300" mb={3}>{activity.description}</Text>
           
@@ -729,12 +731,9 @@ const FeedPage = () => {
         <VStack spacing={0}>
           {/* Main Header */}
           <HStack justify="space-between" p={{ base: 3, md: 4 }} pb={0} w="full" maxW="800px" mx="auto">
-            <VStack align="start" spacing={1}>
-              <Heading size="lg" color="brand.500" fontWeight="700">Feed</Heading>
-              <Text fontSize="sm" color="neutral.400">
-                {todayImpact.activities} activities today
-              </Text>
-            </VStack>
+            <Text fontSize="sm" color="neutral.400">
+              {todayImpact.activities} activities today
+            </Text>
             <HStack spacing={2}>
 
               <IconButton 

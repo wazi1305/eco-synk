@@ -32,8 +32,11 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
     }
   };
 
+  // Safely extract funding data with fallbacks
+  const currentFunding = campaign?.funding?.current ?? campaign?.goals?.current_funding_usd ?? 0;
+  const fundingGoal = campaign?.funding?.goal ?? campaign?.goals?.target_funding_usd ?? 10000;
   const fundingPercent = Math.min(
-    (campaign.funding.current / campaign.funding.goal) * 100,
+    fundingGoal > 0 ? (currentFunding / fundingGoal) * 100 : 0,
     100
   );
 
@@ -55,25 +58,32 @@ const DonationModal = ({ campaign, onClose, onSubmit }) => {
         </div>
 
         {/* Campaign Info */}
-        <div className="p-4 bg-gradient-to-br from-brand-500/10 to-brand-600/5 border-b border-neutral-700">
-          <h3 className="font-bold text-neutral-50 mb-2">{campaign.title}</h3>
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-neutral-400">Raised:</span>
-              <span className="font-bold text-neutral-50">${campaign.funding.current}</span>
+        <div className="p-5 bg-gradient-to-br from-brand-500/10 to-brand-600/5 border-b border-neutral-700">
+          <h3 className="font-bold text-neutral-50 text-lg mb-4">{campaign?.title || campaign?.campaign_name || 'Campaign'}</h3>
+          
+          {/* Funding Stats Grid */}
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700/50">
+              <p className="text-xs text-neutral-400 mb-1">Raised</p>
+              <p className="text-xl font-bold text-brand-500">AED {currentFunding.toLocaleString()}</p>
             </div>
-            <div className="flex justify-between">
-              <span className="text-neutral-400">Goal:</span>
-              <span className="font-bold text-neutral-50">${campaign.funding.goal}</span>
+            <div className="bg-neutral-800/50 rounded-lg p-3 border border-neutral-700/50">
+              <p className="text-xs text-neutral-400 mb-1">Goal</p>
+              <p className="text-xl font-bold text-neutral-200">AED {fundingGoal.toLocaleString()}</p>
             </div>
-            <div className="w-full bg-neutral-700 rounded-full h-2 mt-2">
+          </div>
+          
+          {/* Progress Bar */}
+          <div className="space-y-2">
+            <div className="w-full bg-neutral-700 rounded-full h-3 overflow-hidden">
               <div
-                className="bg-gradient-to-r from-brand-500 to-brand-600 h-2 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(47,212,99,0.4)]"
+                className="bg-gradient-to-r from-brand-500 to-brand-600 h-3 rounded-full transition-all duration-500 shadow-[0_0_12px_rgba(47,212,99,0.5)]"
                 style={{ width: `${fundingPercent}%` }}
               />
             </div>
-            <div className="text-xs text-neutral-400 text-right mt-1">
-              {Math.round(fundingPercent)}% funded
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-semibold text-brand-500">{Math.round(fundingPercent)}% funded</span>
+              <span className="text-xs text-neutral-400">AED {(fundingGoal - currentFunding).toLocaleString()} remaining</span>
             </div>
           </div>
         </div>

@@ -153,19 +153,23 @@ const MapControls = ({
         {currentView === 'map' && (
           <>
             {/* Search Bar */}
-            <Box bg="white" borderRadius="lg" boxShadow="md" p={3} minW="280px">
+            <Box bg="neutral.800" border="1px solid" borderColor="neutral.700" borderRadius="lg" boxShadow="md" p={3} minW="280px">
               <form onSubmit={handleSearchSubmit}>
                 <InputGroup size="sm">
                   <InputLeftElement>
-                    <FiSearch color="gray.400" />
+                    <FiSearch color="neutral.400" />
                   </InputLeftElement>
                   <Input
                     placeholder="Search campaigns or locations..."
                     value={localSearchTerm}
                     onChange={(e) => setLocalSearchTerm(e.target.value)}
                     borderRadius="md"
-                    bg="gray.50"
-                    border="none"
+                    bg="neutral.700"
+                    border="1px solid"
+                    borderColor="neutral.600"
+                    color="neutral.50"
+                    _placeholder={{ color: 'neutral.400' }}
+                    _focus={{ borderColor: 'brand.500', boxShadow: '0 0 0 1px var(--chakra-colors-brand-500)' }}
                   />
                 </InputGroup>
               </form>
@@ -184,7 +188,10 @@ const MapControls = ({
                   variant={filters.priority === key ? 'solid' : 'outline'}
                   colorScheme={color}
                   onClick={() => handlePriorityFilter(key)}
-                  bg={filters.priority === key ? undefined : 'white'}
+                  bg={filters.priority === key ? undefined : 'neutral.800'}
+                  color={filters.priority === key ? undefined : 'neutral.200'}
+                  borderColor={filters.priority === key ? undefined : 'neutral.700'}
+                  _hover={{ bg: filters.priority === key ? undefined : 'neutral.700' }}
                   boxShadow="sm"
                 >
                   {label}
