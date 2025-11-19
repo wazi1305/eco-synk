@@ -239,12 +239,21 @@ const CampaignsPage = () => {
   }, [dataSource]);
 
   const handleDonate = (campaign) => {
+
+    // Donation modal disabled
+    console.log('Donate button clicked for:', campaign.title);
+
     if (!user) {
       setShowAuthModal(true);
       return;
     }
     // Donation modal disabled
     console.log('Donate button clicked for:', campaign.title);
+
+    setSelectedCampaign(campaign);
+    setShowDonationModal(true);
+
+
   };
 
   const handleViewCampaign = (campaign) => {
@@ -260,6 +269,7 @@ const CampaignsPage = () => {
     setSelectedCampaign(campaign);
     setShowJoinModal(true);
   };
+
 
   // const handleDonationSubmit = (amount) => {
   //   if (selectedCampaign) {
@@ -278,6 +288,36 @@ const CampaignsPage = () => {
   //   }
   //   setShowDonationModal(false);
   // };
+
+
+
+  const handleCreateCampaign = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    setShowCreateForm(true);
+  };
+
+  const handleDonationSubmit = (amount) => {
+    if (selectedCampaign) {
+      const updatedCampaigns = campaigns.map(c =>
+        c.id === selectedCampaign.id
+          ? {
+              ...c,
+              funding: {
+                ...(c.funding || {}),
+                current: (c.funding?.current || 0) + amount,
+              },
+            }
+          : c
+      );
+      setCampaigns(updatedCampaigns);
+    }
+    setShowDonationModal(false);
+  };
+
+
 
   const handleCampaignCreated = (newCampaign) => {
     // Add new campaign to the list
