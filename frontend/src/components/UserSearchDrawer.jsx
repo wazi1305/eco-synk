@@ -103,8 +103,8 @@ const UserSearchDrawer = ({ isOpen, onClose }) => {
   const handleFollow = async (candidate) => {
     if (!token) {
       toast({
-        title: 'Sign in required',
-        description: 'Please sign in to follow people.',
+        title: 'Please wait',
+        description: 'We are finalizing your demo session. Try again in a moment.',
         status: 'info',
         duration: 3000,
         isClosable: true

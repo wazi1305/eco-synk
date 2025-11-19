@@ -75,8 +75,16 @@ class CampaignService {
    * @param {Object} campaignData - Campaign information
    * @returns {Promise<Object>} Campaign creation result
    */
-  async createCampaign(campaignData) {
+  async createCampaign(campaignData, authToken) {
     try {
+      const token = authToken || (typeof window !== 'undefined'
+        ? window.sessionStorage.getItem('ecosynk_token')
+        : null);
+
+      if (!token) {
+        throw new Error('Campaign creation failed: Missing authentication token');
+      }
+
       const requestBody = {
         campaign_name: campaignData.campaign_name,
         location: campaignData.location,
@@ -106,11 +114,15 @@ class CampaignService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Campaign creation failed: Unauthorized');
+        }
         throw new Error(`Campaign creation failed: ${response.statusText}`);
       }
 

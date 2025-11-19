@@ -32,7 +32,6 @@ import CreateCampaignForm from './CreateCampaignForm';
 import campaignService from '../../services/campaignService';
 import { normalizeCampaignForUI } from '../../utils/campaignFormatter';
 import { useAuth } from '../../contexts/AuthContext';
-import AuthModal from '../auth/AuthModal';
 
 // Campaign list component
 const CampaignList = ({
@@ -94,15 +93,12 @@ const CampaignList = ({
   </Box>
 );
 
-
 const CampaignsPage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  const [showAuthModal, setShowAuthModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [campaigns, setCampaigns] = useState([]);
   const [selectedCampaign, setSelectedCampaign] = useState(null);
-  const [showDonationModal, setShowDonationModal] = useState(false);
   const [showCampaignDetail, setShowCampaignDetail] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -111,8 +107,6 @@ const CampaignsPage = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [warning, setWarning] = useState(null);
-  const [dataSource, setDataSource] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
 
   const lastScrollYRef = useRef(0);
 
@@ -140,8 +134,6 @@ const CampaignsPage = () => {
         const normalized = (response.campaigns || []).map(normalizeCampaignForUI);
 
         setCampaigns(normalized);
-        setDataSource(response.source);
-        setLastUpdated(new Date());
         if (response.warning) {
           setWarning(response.warning);
         }
@@ -222,25 +214,9 @@ const CampaignsPage = () => {
 
   const isSearching = Boolean(searchTerm.trim());
   const listLoading = isLoading && campaigns.length === 0;
-  const sourceLabel = useMemo(() => {
-    if (!dataSource) {
-      return null;
-    }
-    if (dataSource === 'network' || dataSource === 'qdrant') {
-      return 'Live from Qdrant';
-    }
-    if (dataSource === 'memory') {
-      return 'In-memory cache';
-    }
-    if (dataSource === 'local-cache' || dataSource === 'storage') {
-      return 'Offline cache';
-    }
-    return dataSource;
-  }, [dataSource]);
-
   const handleDonate = (campaign) => {
     if (!user) {
-      setShowAuthModal(true);
+      console.warn('Demo user not ready. Donation skipped.', campaign?.title);
       return;
     }
     // Donation modal disabled
@@ -254,7 +230,7 @@ const CampaignsPage = () => {
 
   const handleJoinCampaign = (campaign) => {
     if (!user) {
-      setShowAuthModal(true);
+      console.warn('Demo user not ready. Join skipped.', campaign?.title);
       return;
     }
     setSelectedCampaign(campaign);
@@ -414,7 +390,7 @@ const CampaignsPage = () => {
                 color="neutral.900"
                 onClick={() => {
                   if (!user) {
-                    setShowAuthModal(true);
+                    console.warn('Demo user not ready. Cannot open create form yet.');
                     return;
                   }
                   setShowCreateForm(true);
@@ -508,14 +484,7 @@ const CampaignsPage = () => {
         />
       )}
 
-      {/* Donation Modal - Disabled */}
-      {/* {showDonationModal && selectedCampaign && (
-        <DonationModal
-          campaign={selectedCampaign}
-          onClose={() => setShowDonationModal(false)}
-          onSubmit={handleDonationSubmit}
-        />
-      )} */}
+      {/* Donation flow intentionally disabled for the demo build. */}
 
       {/* Campaign Detail Modal */}
       {showCampaignDetail && selectedCampaign && (
@@ -530,12 +499,6 @@ const CampaignsPage = () => {
         isOpen={showCreateForm}
         onClose={() => setShowCreateForm(false)}
         onSuccess={handleCampaignCreated}
-      />
-
-      {/* Auth Modal */}
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
       />
     </Flex>
   );

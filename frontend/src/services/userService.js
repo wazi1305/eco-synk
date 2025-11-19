@@ -100,6 +100,47 @@ class UserService {
   }
 
   /**
+   * Get the authenticated user's profile
+   */
+  async getCurrentUser(token) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          return {
+            success: false,
+            error: 'Not authenticated'
+          };
+        }
+
+        try {
+          const error = await response.json();
+          throw new Error(error.detail || 'Failed to validate session');
+        } catch {
+          throw new Error('Failed to validate session');
+        }
+      }
+
+      const data = await response.json();
+      return {
+        success: true,
+        user: data.user
+      };
+    } catch (error) {
+      console.error('Get current user error:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
+
+  /**
    * Search users by name or email
    */
   async searchUsers(query, limit = 20) {
