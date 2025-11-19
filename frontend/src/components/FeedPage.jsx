@@ -35,8 +35,6 @@ import {
   useDisclosure,
 } from '@chakra-ui/react';
 import { useAuth } from '../contexts/AuthContext';
-import AuthModal from './auth/AuthModal';
-import AuthGuard from './auth/AuthGuard';
 import {
   FiHeart,
   FiMessageCircle,
@@ -70,14 +68,6 @@ const DEFAULT_IMPACT_STATS = {
   itemsCollected: 0,
   co2Saved: 0,
   locationsCleared: 0,
-};
-
-const getSourceColor = (source) => {
-  if (source === 'network' || source === 'qdrant') return 'green';
-  if (source === 'memory') return 'blue';
-  if (source === 'local-cache' || source === 'storage') return 'yellow';
-  if (source === 'api-fallback') return 'orange';
-  return 'gray';
 };
 
 const safeNumber = (value, fallback = 0) => {
@@ -350,9 +340,7 @@ const FeedPage = () => {
   const [warning, setWarning] = useState(null);
   const [metadata, setMetadata] = useState({ campaigns: null, volunteers: null, reports: null });
   const [lastUpdated, setLastUpdated] = useState(null);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const searchDisclosure = useDisclosure();
 
   const handleScroll = useCallback(() => {
@@ -368,11 +356,6 @@ const FeedPage = () => {
   }, [lastScrollY]);
 
   const toggleLike = (activityId) => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
-    
     setLikedPosts(prev => {
       const newLiked = new Set(prev);
       if (newLiked.has(activityId)) {
@@ -773,21 +756,16 @@ const FeedPage = () => {
                 color="neutral.400"
                 _hover={{ bg: 'rgba(47, 212, 99, 0.1)', color: 'brand.500' }}
               />
-              {isAuthenticated ? (
-                <Menu>
-                  <MenuButton as={Button} variant="ghost" size="sm" p={1}>
-                    <Avatar size="sm" name={user?.name} src={user?.avatar} />
-                  </MenuButton>
-                  <MenuList>
-                    <MenuItem>Profile</MenuItem>
-                    <MenuItem>Settings</MenuItem>
-                    <MenuItem onClick={logout}>Sign Out</MenuItem>
-                  </MenuList>
-                </Menu>
+              {user ? (
+                <HStack spacing={2} pl={2}>
+                  <Avatar size="sm" name={user?.name} src={user?.avatar} />
+                  <VStack spacing={0} align="flex-start">
+                    <Text fontSize="xs" color="neutral.200">{user?.name || 'Ryan Balloo'}</Text>
+                    <Text fontSize="xs" color="neutral.500">Demo account active</Text>
+                  </VStack>
+                </HStack>
               ) : (
-                <Button size="sm" colorScheme="brand" onClick={() => setShowAuthModal(true)}>
-                  Sign In
-                </Button>
+                <Spinner size="sm" color="brand.500" />
               )}
             </HStack>
           </HStack>
@@ -910,7 +888,14 @@ const FeedPage = () => {
             borderRadius="12px"
           >
             <CardBody>
-              {isAuthenticated ? (
+              {authLoading || !user ? (
+                <VStack spacing={3} py={4}>
+                  <Spinner color="brand.500" size="sm" />
+                  <Text color="neutral.400" textAlign="center" fontSize="sm">
+                    Preparing your session…
+                  </Text>
+                </VStack>
+              ) : (
                 <>
                   <HStack spacing={3} mb={3}>
                     <Avatar 
@@ -972,26 +957,12 @@ const FeedPage = () => {
                     </Button>
                   </HStack>
                 </>
-              ) : (
-                <VStack spacing={3} py={4}>
-                  <Text color="neutral.400" textAlign="center">
-                    Sign in to share your eco-impact and connect with the community
-                  </Text>
-                  <Button 
-                    bg="brand.500"
-                    color="neutral.900"
-                    _hover={{ bg: 'brand.600' }}
-                    onClick={() => setShowAuthModal(true)}
-                  >
-                    Sign In to Post
-                  </Button>
-                </VStack>
               )}
             </CardBody>
           </Card>
 
           {/* Recommended Users Section */}
-          {isAuthenticated && <RecommendedUsers limit={3} />}
+          {user && <RecommendedUsers limit={3} />}
 
           {/* Activities Feed */}
           {isLoading ? (
@@ -1043,13 +1014,6 @@ const FeedPage = () => {
         onClose={() => setIsProfileModalOpen(false)}
         userData={selectedUser}
       />
-      
-      {/* Auth Modal */}
-      <AuthModal 
-        isOpen={showAuthModal} 
-        onClose={() => setShowAuthModal(false)} 
-      />
-
       {/* Global user search */}
       <UserSearchDrawer
         isOpen={searchDisclosure.isOpen}

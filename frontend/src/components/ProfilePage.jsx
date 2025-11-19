@@ -34,10 +34,9 @@ import { FiCalendar, FiTrendingUp, FiAward, FiTarget, FiMapPin, FiZap } from 're
 import volunteerService from '../services/volunteerService';
 import userService from '../services/userService';
 import { useAuth } from '../contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
 
 const ProfilePage = () => {
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const [showHeader, setShowHeader] = useState(true);
   const [leaderboard, setLeaderboard] = useState([]);
   const [leaderboardLoading, setLeaderboardLoading] = useState(true);
@@ -79,11 +78,6 @@ const ProfilePage = () => {
     
     lastScrollYRef.current = currentScrollY;
   }, []);
-
-  // If not authenticated, redirect to login
-  if (!authLoading && !isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
 
   // Show loading while checking auth
   if (authLoading || !user) {

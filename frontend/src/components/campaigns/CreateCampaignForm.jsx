@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
 import {
-  Box,
   VStack,
   HStack,
-  Heading,
   Text,
   Input,
   Textarea,
@@ -29,6 +27,7 @@ import {
 } from '@chakra-ui/react';
 import campaignService from '../../services/campaignService';
 import LocationAutocomplete from './LocationAutocomplete';
+import { useAuth } from '../../contexts/AuthContext';
 
 const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -47,6 +46,7 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
   const [isGettingLocation, setIsGettingLocation] = useState(false);
   const [locationName, setLocationName] = useState('Dubai, UAE');
   const [errors, setErrors] = useState({});
+  const { token, isLoading: authLoading } = useAuth();
   const toast = useToast();
 
   const handleInputChange = (field, value) => {
@@ -186,6 +186,17 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
       return;
     }
 
+    if (!token) {
+      toast({
+        title: 'Session not ready',
+        description: 'Please wait a moment while we finish connecting the demo account.',
+        status: 'info',
+        duration: 4000,
+        isClosable: true,
+      });
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -199,7 +210,7 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
         }
       };
 
-      const result = await campaignService.createCampaign(campaignData);
+      const result = await campaignService.createCampaign(campaignData, token);
 
       if (result.success) {
         toast({
@@ -302,12 +313,23 @@ const CreateCampaignForm = ({ isOpen, onClose, onSuccess }) => {
                   >
                     📍 Use Current Location
                   </Button>
+                  {authLoading && (
+                    <HStack spacing={2} alignItems="center" color="gray.600">
+                      <Spinner size="sm" />
+                      <Text fontSize="sm">Connecting demo session…</Text>
+                    </HStack>
+                  )}
+                  {!authLoading && !token && (
+                    <Text fontSize="sm" color="orange.500">
+                      Hang tight—demo account is still initializing. Form submission will unlock automatically.
+                    </Text>
+                  )}
                 </VStack>
               </FormControl>
 
-              <HStack spacing={4}>
+              <HStack spacing={4} align="stretch">
                 <FormControl isInvalid={errors.target_funding_usd}>
-                  <FormLabel>Funding Goal (USD)</FormLabel>
+                  <FormLabel>Target Funding (USD)</FormLabel>
                   <NumberInput
                     value={formData.target_funding_usd}
                     onChange={(value) => handleInputChange('target_funding_usd', parseInt(value) || 0)}

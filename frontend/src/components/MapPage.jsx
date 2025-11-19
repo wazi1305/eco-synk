@@ -106,9 +106,9 @@ const MapPage = () => {
   const handleCampaignJoin = (campaign) => {
     if (!user) {
       toast({
-        title: 'Authentication Required',
-        description: 'Please login or sign up to join campaigns.',
-        status: 'warning',
+        title: 'Session Starting',
+        description: 'Hang tight—your demo account is still connecting.',
+        status: 'info',
         duration: 5000,
         isClosable: true,
       });
