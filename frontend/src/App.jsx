@@ -18,6 +18,7 @@ import {
   FiUser,
   FiCompass,
 } from 'react-icons/fi';
+import { AuthProvider } from './contexts/AuthContext';
 import SplashScreen from './components/SplashScreen';
 import FeedPage from './components/FeedPage';
 import CameraPage from './components/CameraPage';
@@ -103,13 +104,13 @@ function App() {
   }
 
   return (
-    <Flex
-      direction="column"
-      bg="neutral.900"
-      height={windowHeight}
-      className="app-container safe-area-inset"
-      position="relative"
-    >
+    <AuthProvider>
+      <Flex
+        direction="column"
+        bg="gray.50"
+        height={windowHeight}
+        className="app-container safe-area-inset"
+      >
       {/* Main Content Area */}
       <Box 
         flex="1" 
@@ -230,7 +231,8 @@ function App() {
           </HStack>
         </Box>
       </Box>
-    </Flex>
+      </Flex>
+    </AuthProvider>
   );
 }
 

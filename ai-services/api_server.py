@@ -15,7 +15,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Dict, Any, List, Optional
 from pathlib import Path
 
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Body, Query
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Body, Query, Header, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -26,7 +26,9 @@ from gemini.trash_analyzer import TrashAnalyzer
 from qdrant.vector_store import EcoSynkVectorStore
 from embeddings.generator import EmbeddingGenerator
 from yolo.waste_detector import WasteDetector
+from geocoding import reverse_geocode
 from campaigns import CampaignManager
+
 from image_generation import (
     CampaignBannerGenerator,
     BannerResult,
@@ -34,6 +36,8 @@ from image_generation import (
     build_negative_prompt,
 )
 from geocoding import reverse_geocode
+from user_service import UserService
+
 
 
 # ============================================================================
@@ -127,7 +131,12 @@ app = FastAPI(
 # CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For hackathon - restrict in production
+    allow_origins=[
+        "*",  # For hackathon - restrict in production
+        "https://eco-synk-fj59-nf09njo7e-wazi1305s-projects.vercel.app",
+        "http://localhost:5173",
+        "http://localhost:3000"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -140,6 +149,7 @@ embedder: Optional[EmbeddingGenerator] = None
 waste_detector: Optional[WasteDetector] = None
 campaign_manager: Optional[CampaignManager] = None
 banner_generator: Optional[CampaignBannerGenerator] = None
+user_service: Optional[UserService] = None
 
 
 
@@ -242,9 +252,9 @@ def _enrich_location(raw_location: Optional[Dict[str, Any]]) -> Optional[Dict[st
 @app.on_event("startup")
 async def startup_event():
     """Initialize services on startup"""
-
     global analyzer, vector_store, embedder, waste_detector
     global analyzer, vector_store, embedder, campaign_manager, banner_generator
+    global analyzer, vector_store, embedder, waste_detector, campaign_manager, user_service
 
     
     print("\n" + "=" * 60)
@@ -338,6 +348,14 @@ async def startup_event():
     except Exception as e:
         print(f"  ⚠️  Banner generator failed: {e}")
         banner_generator = None
+    # User Service
+    try:
+        print("  → Initializing User Service...")
+        user_service = UserService()
+        print("  ✅ User Service ready")
+    except Exception as e:
+        print(f"  ⚠️  User Service failed: {e}")
+        user_service = None
 
     
     print("\n✅ Server startup complete!")
@@ -785,6 +803,7 @@ async def detect_waste(
         raise HTTPException(status_code=500, detail=f"Detection failed: {str(e)}")
 
 
+
 @app.post("/detect-waste/live")
 async def detect_waste_live(
     file: UploadFile = File(..., description="Video frame for live waste detection"),
@@ -882,6 +901,7 @@ async def detect_waste_live(
                 temp_path.unlink(missing_ok=True)
             except Exception:
                 pass
+
 
  
 @app.post("/reports/search")
@@ -1891,13 +1911,185 @@ async def get_campaign(campaign_id: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch campaign: {str(e)}")
 
 
+# ============================================================================
+# User Authentication Endpoints
+# ============================================================================
+
+from auth_models import UserRegisterRequest, UserLoginRequest, UserUpdateRequest
+
+def get_current_user(authorization: Optional[str] = Header(None)):
+    """Extract user from JWT token"""
+    if not authorization or not authorization.startswith("Bearer "):
+        return None
+    
+    token = authorization.split(" ")[1]
+    if user_service:
+        user_id = user_service.verify_jwt(token)
+        if user_id:
+            return user_service.get_user_by_id(user_id)
+    return None
+
+@app.post("/auth/register")
+async def register_user(request: UserRegisterRequest):
+    """Register a new user"""
+    if user_service is None:
+        raise HTTPException(status_code=503, detail="User service not available")
+    
+    try:
+        result = user_service.register_user(
+            name=request.name,
+            email=request.email,
+            password=request.password,
+            bio=request.bio,
+            location=request.location,
+            city=request.city,
+            country=request.country,
+            interests=request.interests,
+            skills=request.skills,
+            experience_level=request.experience_level
+        )
+        
+        if result["success"]:
+            return {
+                "status": "success",
+                "user": result["user"],
+                "token": result["token"],
+                "message": "User registered successfully"
+            }
+        else:
+            raise HTTPException(status_code=400, detail=result["error"])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Registration failed: {str(e)}")
+
+@app.post("/auth/login")
+async def login_user(request: UserLoginRequest):
+    """Login user"""
+    if user_service is None:
+        raise HTTPException(status_code=503, detail="User service not available")
+    
+    try:
+        result = user_service.login_user(request.email, request.password)
+        
+        if result["success"]:
+            return {
+                "status": "success",
+                "user": result["user"],
+                "token": result["token"],
+                "message": "Login successful"
+            }
+        else:
+            raise HTTPException(status_code=401, detail=result["error"])
+            
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Login failed: {str(e)}")
+
+@app.get("/auth/me")
+async def get_current_user_profile(current_user = Depends(get_current_user)):
+    """Get current user profile"""
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    
+    return {
+        "status": "success",
+        "user": current_user
+    }
+
+@app.get("/users/{user_id}/stats")
+async def get_user_stats(user_id: str):
+    """Get user activity statistics"""
+    try:
+        # Get all campaigns
+        campaigns_result = vector_store.client.scroll(
+            collection_name=settings.campaigns_collection,
+            limit=1000,
+            with_payload=True,
+            with_vectors=False
+        )
+        
+        # Get all trash reports
+        reports_result = vector_store.client.scroll(
+            collection_name=settings.trash_reports_collection,
+            limit=1000,
+            with_payload=True,
+            with_vectors=False
+        )
+        
+        # Calculate stats
+        campaigns_joined = 0
+        campaigns_created = 0
+        donations_made = 0
+        total_area_cleaned = 0
+        total_co2_saved = 0
+        cities = {}
+        
+        # Process campaigns
+        for point in campaigns_result[0]:
+            payload = point.payload or {}
+            
+            # Check if user created this campaign
+            if payload.get('created_by') == user_id:
+                campaigns_created += 1
+            
+            # Check if user joined (simplified - would need join tracking)
+            # For now, assume user joined if they appear in volunteers list
+            volunteers = payload.get('volunteers', [])
+            if any(v.get('user_id') == user_id for v in volunteers):
+                campaigns_joined += 1
+                
+                # Track cities
+                location = payload.get('location', {})
+                city = location.get('city') or 'Unknown'
+                cities[city] = cities.get(city, 0) + 1
+                
+                # Estimate area cleaned (25 sq meters per campaign)
+                total_area_cleaned += 25
+                
+                # Estimate CO2 saved (10kg per campaign)
+                total_co2_saved += 10
+        
+        # Process trash reports for additional stats
+        user_reports = 0
+        for point in reports_result[0]:
+            payload = point.payload or {}
+            if payload.get('user_id') == user_id:
+                user_reports += 1
+                # Add CO2 from individual reports (2kg per report)
+                total_co2_saved += 2
+        
+        # Find most common city
+        most_common_city = max(cities.items(), key=lambda x: x[1])[0] if cities else 'None'
+        
+        return {
+            "status": "success",
+            "user_id": user_id,
+            "stats": {
+                "campaigns_joined": campaigns_joined,
+                "campaigns_created": campaigns_created,
+                "donations_made": donations_made,  # TODO: implement donation tracking
+                "total_area_cleaned_sqm": total_area_cleaned,
+                "avg_area_per_cleanup_sqm": total_area_cleaned / max(campaigns_joined, 1),
+                "total_co2_saved_kg": total_co2_saved,
+                "avg_co2_per_cleanup_kg": total_co2_saved / max(campaigns_joined + user_reports, 1),
+                "most_common_city": most_common_city,
+                "cities_worked_in": len(cities),
+                "individual_reports": user_reports
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get user stats: {str(e)}")
+
 @app.post("/campaigns")
-async def create_campaign_frontend(campaign_data: Dict[str, Any] = Body(...)):
+async def create_campaign_frontend(campaign_data: Dict[str, Any] = Body(...), current_user = Depends(get_current_user)):
     """
     Create a cleanup campaign from frontend form data
     
     Handles campaign creation requests from the frontend form.
     """
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Authentication required to create campaigns")
+    
     try:
         # Extract data from frontend format
         campaign_name = campaign_data.get('campaign_name', 'New Campaign')

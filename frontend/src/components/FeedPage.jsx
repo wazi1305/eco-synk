@@ -33,6 +33,9 @@ import {
   TabPanel,
   Spinner,
 } from '@chakra-ui/react';
+import { useAuth } from '../contexts/AuthContext';
+import AuthModal from './auth/AuthModal';
+import AuthGuard from './auth/AuthGuard';
 import {
   FiHeart,
   FiMessageCircle,
@@ -344,6 +347,9 @@ const FeedPage = () => {
   const [warning, setWarning] = useState(null);
   const [metadata, setMetadata] = useState({ campaigns: null, volunteers: null, reports: null });
   const [lastUpdated, setLastUpdated] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  
+  const { user, isAuthenticated, logout } = useAuth();
 
   const handleScroll = useCallback(() => {
     const currentScrollY = scrollRef.current?.scrollTop || 0;
@@ -358,6 +364,11 @@ const FeedPage = () => {
   }, [lastScrollY]);
 
   const toggleLike = (activityId) => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
+    }
+    
     setLikedPosts(prev => {
       const newLiked = new Set(prev);
       if (newLiked.has(activityId)) {
@@ -724,6 +735,7 @@ const FeedPage = () => {
               {todayImpact.activities} activities today
             </Text>
             <HStack spacing={2}>
+
               <IconButton 
                 icon={<FiSearch />} 
                 variant="ghost" 
@@ -745,6 +757,9 @@ const FeedPage = () => {
                 color="brand.500"
                 _hover={{ bg: 'rgba(47, 212, 99, 0.1)' }}
               />
+              <IconButton icon={<FiSearch />} variant="ghost" size="sm" />
+              <IconButton icon={<FiFilter />} variant="ghost" size="sm" />
+
               <IconButton
                 icon={<FiRefreshCw />}
                 variant="ghost"
@@ -755,6 +770,22 @@ const FeedPage = () => {
                 color="neutral.400"
                 _hover={{ bg: 'rgba(47, 212, 99, 0.1)', color: 'brand.500' }}
               />
+              {isAuthenticated ? (
+                <Menu>
+                  <MenuButton as={Button} variant="ghost" size="sm" p={1}>
+                    <Avatar size="sm" name={user?.name} src={user?.avatar} />
+                  </MenuButton>
+                  <MenuList>
+                    <MenuItem>Profile</MenuItem>
+                    <MenuItem>Settings</MenuItem>
+                    <MenuItem onClick={logout}>Sign Out</MenuItem>
+                  </MenuList>
+                </Menu>
+              ) : (
+                <Button size="sm" colorScheme="brand" onClick={() => setShowAuthModal(true)}>
+                  Sign In
+                </Button>
+              )}
             </HStack>
           </HStack>
 
@@ -876,6 +907,7 @@ const FeedPage = () => {
             borderRadius="12px"
           >
             <CardBody>
+
               <HStack spacing={3} mb={3}>
                 <Avatar 
                   size="sm" 
@@ -934,6 +966,40 @@ const FeedPage = () => {
                   Post
                 </Button>
               </HStack>
+              {isAuthenticated ? (
+                <>
+                  <HStack spacing={3} mb={3}>
+                    <Avatar size="sm" name={user?.name} src={user?.avatar} />
+                    <Textarea
+                      placeholder="Share your eco-impact..."
+                      value={newPost}
+                      onChange={(e) => setNewPost(e.target.value)}
+                      resize="none"
+                      minH="unset"
+                      rows={2}
+                    />
+                  </HStack>
+                  <HStack justify="space-between">
+                    <HStack spacing={2}>
+                      <IconButton icon={<FiCamera />} variant="ghost" size="sm" />
+                      <IconButton icon={<FiMapPin />} variant="ghost" size="sm" />
+                      <IconButton icon={<FiUsers />} variant="ghost" size="sm" />
+                    </HStack>
+                    <Button size="sm" colorScheme="brand" isDisabled={!newPost.trim()}>
+                      Post
+                    </Button>
+                  </HStack>
+                </>
+              ) : (
+                <VStack spacing={3} py={4}>
+                  <Text color="gray.600" textAlign="center">
+                    Sign in to share your eco-impact and connect with the community
+                  </Text>
+                  <Button colorScheme="brand" onClick={() => setShowAuthModal(true)}>
+                    Sign In to Post
+                  </Button>
+                </VStack>
+              )}
             </CardBody>
           </Card>
 
@@ -986,6 +1052,12 @@ const FeedPage = () => {
         isOpen={isProfileModalOpen}
         onClose={() => setIsProfileModalOpen(false)}
         userData={selectedUser}
+      />
+      
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
       />
     </Box>
   );
